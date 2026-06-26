@@ -1,0 +1,37 @@
+# TI mmWave radar configuration (skeleton for future integration)
+
+device:
+  type: ti_mmwave
+  model: IWR1443  # or IWR6843, AWR2944
+  interface: serial  # serial / udp / file_replay
+
+serial:
+  cli_port: /dev/ttyACM0
+  data_port: /dev/ttyACM1
+  cli_baud: 115200
+  data_baud: 921600
+
+# Chirp configuration
+chirp:
+  start_freq_ghz: 77.0
+  idle_time_us: 7.0
+  adc_start_time_us: 6.0
+  ramp_end_time_us: 60.0
+  freq_slope_mhz_per_us: 29.982
+  num_adc_samples: 256
+  adc_sample_rate_ksps: 5000
+  rx_gain_db: 30
+
+# Frame configuration
+frame:
+  num_chirps_per_frame: 128
+  num_frames: 0  # 0 = infinite
+  frame_periodicity_ms: 50
+  num_tx: 2
+  num_rx: 4
+
+# Output
+output:
+  range_doppler: true
+  point_cloud: true
+  raw_adc: false

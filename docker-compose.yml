@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./configs:/app/configs
+    environment:
+      - DATA_DIR=/app/data
+      - MODELS_DIR=/app/models
+      - REPORTS_DIR=/app/reports
+      - DEVICE=cpu
+    command: uvicorn radar_drone_vision.api.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./configs:/app/configs
+    environment:
+      - DATA_DIR=/app/data
+      - MODELS_DIR=/app/models
+      - REPORTS_DIR=/app/reports
+      - DEVICE=cpu
+    command: python -c "print('Worker ready. Use docker compose exec worker python scripts/<script>.py')"
+    restart: "no"

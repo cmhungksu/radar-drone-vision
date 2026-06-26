@@ -1,0 +1,42 @@
+# Zenodo 77GHz FMCW radar dataset configuration
+# DOI: 10.5281/zenodo.5845259
+# Sensor: 77 GHz FMCW radar with mechanically scanning antenna
+
+dataset:
+  name: zenodo_77ghz_fmcw
+  source: zenodo
+  doi: "10.5281/zenodo.5845259"
+  files:
+    data: data_SAAB_SIRS_77GHz_FMCW.npy
+    readme: ReadMe.txt
+  expected_samples: 75868
+  carrier_frequency_hz: 77.0e9
+  radar_type: fmcw
+
+# NOTE: This dataset differs from the paper's original Thales X-band CW dataset.
+# Results are for algorithm validation, not exact paper reproduction.
+validation_mode: approximate_algorithm_reproduction
+
+# Class mapping
+# Original labels in dataset: birds, humans, six different drones
+# Binary mapping for UAV vs non-UAV
+class_mapping:
+  uav_classes:
+    - drone  # will match any class containing 'drone'
+  non_uav_classes:
+    - bird
+    - human
+
+# Signal processing overrides for this dataset
+signal:
+  frame_size: 256
+  hop_size: 128
+  window: hann
+  n_fft: 256
+
+# Split configuration
+split:
+  method: half  # half / kfold / stratified
+  test_ratio: 0.5
+  n_folds: 5
+  stratify: true

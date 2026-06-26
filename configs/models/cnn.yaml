@@ -1,0 +1,42 @@
+# PyTorch CNN configuration for micro-Doppler classification
+
+model:
+  type: cnn
+  name: SmallRadarCNN
+  in_channels: 2       # real + imag for proposed feature; 1 for spectrogram
+  num_classes: 2
+  dropout: 0.3
+
+feature:
+  type: proposed_complex_image
+  # Input: 2-channel image (real, imag) from regularized complex-log-fourier
+  resize: [128, 128]  # resize micro-Doppler image
+
+training:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.001
+  weight_decay: 1.0e-4
+  scheduler: cosine
+  early_stopping:
+    patience: 10
+    min_delta: 0.001
+  class_weight: balanced  # handle class imbalance
+
+optimizer:
+  type: adam
+  betas: [0.9, 0.999]
+
+augmentation:
+  time_shift: true
+  noise_injection: true
+  noise_std: 0.01
+
+checkpoint:
+  save_best: true
+  save_last: true
+  metric: val_f1
+
+export:
+  onnx: true
+  input_shape: [1, 2, 128, 128]

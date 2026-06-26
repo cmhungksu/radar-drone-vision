@@ -1,0 +1,18 @@
+# Infineon radar configuration (skeleton for future integration)
+
+device:
+  type: infineon
+  model: BGT60TR13C  # or BGT60UTR11AIP
+  interface: sdk  # sdk / file_replay
+
+sensor:
+  frequency_ghz: 60.0
+  num_rx: 3
+  num_tx: 1
+  num_samples_per_chirp: 64
+  num_chirps_per_frame: 32
+  frame_rate_hz: 20
+
+output:
+  raw_adc: true
+  range_doppler: true

@@ -1,0 +1,22 @@
+# Generic I/Q stream configuration
+
+device:
+  type: generic_iq
+  interface: udp  # udp / tcp / serial / file_replay
+
+connection:
+  host: 127.0.0.1
+  port: 4098
+  buffer_size: 65536
+
+stream:
+  sample_rate_hz: 96000
+  center_frequency_hz: 10.0e9
+  sample_format: complex64  # complex64 / complex128 / interleaved_float32
+  endian: little
+  samples_per_packet: 1024
+
+file_replay:
+  path: null
+  loop: false
+  speed: 1.0

@@ -1,0 +1,44 @@
+# Subspace Reliability Analysis (SRA) configuration
+# Based on: "Regularized 2-D Complex-Log Spectral Analysis and
+# Subspace Reliability Analysis of Micro-Doppler Signature for UAV Detection"
+
+model:
+  type: sra
+  name: SubspaceReliabilityAnalysis
+
+sra:
+  m_uav: 10        # subspace dimension for UAV class
+  m_non_uav: 100   # subspace dimension for non-UAV class
+  ridge: 1.0e-5    # ridge regularization for covariance
+
+feature:
+  type: proposed_regularized_complex_log_fft
+  # Alternatives: spectrogram, cepstrogram, cvd
+  mode: real_imag_concat
+  # Alternatives: magnitude_only, magnitude_phase_concat, complex_abs
+
+baseline_comparisons:
+  - name: spectrogram_pca
+    feature: spectrogram
+    classifier: pca_mahalanobis
+    n_components: 50
+  - name: cepstrogram_pca
+    feature: cepstrogram
+    classifier: pca_mahalanobis
+    n_components: 50
+  - name: cvd_pca
+    feature: cvd
+    classifier: pca_mahalanobis
+    n_components: 50
+  - name: proposed_pca
+    feature: proposed_regularized_complex_log_fft
+    classifier: pca_mahalanobis
+    n_components: 50
+  - name: proposed_sra
+    feature: proposed_regularized_complex_log_fft
+    classifier: sra
+
+training:
+  repeat: 20       # number of random train/test splits
+  split: half      # half-half split as in paper
+  seed: 42

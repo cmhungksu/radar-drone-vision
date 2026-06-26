@@ -1,0 +1,31 @@
+# Default configuration for radar-drone-vision
+
+seed: 42
+device: cpu  # cpu / cuda / mps
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  cache_dir: data/cache
+  reports_dir: data/reports
+
+signal:
+  frame_size: 256
+  hop_size: 128
+  window: hann
+  n_fft: 256
+
+complex_log_fft:
+  phase_weight: 0.31831  # 1/pi
+  regularizer: median  # median / mean / percentile / none
+  eps: 1.0e-8
+  feature_mode: real_imag_concat  # real_imag_concat / magnitude_only / magnitude_phase_concat / complex_abs
+
+clutter:
+  remove_dc: true
+  dc_bins: 3
+  keep_bins: null  # [start, end] or null for all
+  normalize_each_sample: true
+
+models_dir: models
+reports_dir: reports
