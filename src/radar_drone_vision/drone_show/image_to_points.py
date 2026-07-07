@@ -139,6 +139,24 @@ def sample_points_by_count(
         probs = importance / importance.sum()
         selected_idx = np.random.choice(n_available, size=drone_count, replace=False, p=probs)
 
+    # Enforce minimum spacing between selected points (at least 2 pixels)
+    selected_pts = contour_points[selected_idx[:drone_count]].copy()
+    min_pixel_dist = max(2.0, max_dim / (drone_count * 0.8))
+    for i in range(1, len(selected_pts)):
+        for j in range(i):
+            d = np.linalg.norm(selected_pts[i] - selected_pts[j])
+            if d < min_pixel_dist:
+                # Jitter the point outward
+                direction = selected_pts[i] - selected_pts[j]
+                if np.linalg.norm(direction) < 0.01:
+                    direction = np.array([np.random.randn(), np.random.randn()])
+                direction = direction / (np.linalg.norm(direction) + 1e-8)
+                selected_pts[i] = selected_pts[j] + direction * min_pixel_dist
+                selected_pts[i] = np.clip(selected_pts[i], 0, [w - 1, h - 1])
+    # Write back jittered positions
+    for i in range(min(len(selected_idx), drone_count)):
+        contour_points[selected_idx[i]] = selected_pts[i]
+
     h, w = bgr_image.shape[:2]
     max_dim = max(h, w)
     half_span = 50.0 * scale  # ±50m default

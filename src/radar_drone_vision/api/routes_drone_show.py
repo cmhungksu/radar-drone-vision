@@ -280,6 +280,77 @@ async def download_render_file(render_id: str, filename: str):
     return FileResponse(file_path, filename=filename)
 
 
+# ── Obstacles ─────────────────────────────────────────────────────────────────
+
+# In-memory obstacle registry (per-session; production would use DB)
+_obstacle_registries: dict[str, "ObstacleRegistry"] = {}
+
+
+def _get_registry(project_id: str = "default"):
+    from radar_drone_vision.drone_show.obstacles import ObstacleRegistry
+    if project_id not in _obstacle_registries:
+        _obstacle_registries[project_id] = ObstacleRegistry()
+    return _obstacle_registries[project_id]
+
+
+@router.post("/obstacles")
+async def add_obstacle(body: dict):
+    """Add an obstacle from Canvas drawing.
+
+    Body: { name, type (balloon/building/no_fly/stage), shape,
+            canvas_x, canvas_y, canvas_w, canvas_h,
+            z_min, z_max, safety_buffer, project_id? }
+    """
+    from radar_drone_vision.drone_show.obstacles import canvas_to_obstacle
+
+    project_id = body.pop("project_id", "default")
+    registry = _get_registry(project_id)
+    obs = canvas_to_obstacle(body)
+    registry.add(obs)
+
+    logger.info("Obstacle added: %s (%s)", obs.name, obs.obs_type)
+    return obs.to_dict()
+
+
+@router.get("/obstacles")
+async def list_obstacles(project_id: str = Query("default")):
+    """List all obstacles for a project."""
+    registry = _get_registry(project_id)
+    return {"obstacles": registry.to_list(), "count": len(registry.obstacles)}
+
+
+@router.delete("/obstacles/{obstacle_id}")
+async def remove_obstacle(obstacle_id: str, project_id: str = Query("default")):
+    """Remove an obstacle."""
+    registry = _get_registry(project_id)
+    removed = registry.remove(obstacle_id)
+    if not removed:
+        raise HTTPException(404, f"Obstacle not found: {obstacle_id}")
+    return {"removed": obstacle_id}
+
+
+@router.post("/obstacles/check-formation")
+async def check_formation_obstacles(body: dict):
+    """Check a formation frame against all obstacles.
+
+    Body: { frame_id, project_id? }
+    """
+    frame_id = body.get("frame_id", "")
+    project_id = body.get("project_id", "default")
+
+    frame_path = PLANS_DIR / f"{frame_id}.json"
+    if not frame_path.exists():
+        raise HTTPException(404, f"Frame not found: {frame_id}")
+
+    from radar_drone_vision.drone_show.schemas import FormationFrame
+    with open(frame_path) as f:
+        frame = FormationFrame(**json.load(f))
+
+    registry = _get_registry(project_id)
+    result = registry.check_formation(frame.points)
+    return result
+
+
 # ── Status / Info ────────────────────────────────────────────────────────────
 
 @router.get("/status")
