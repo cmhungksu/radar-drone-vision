@@ -616,6 +616,141 @@ async def get_replay_timeline(log_id: str, drone_id: Optional[str] = Query(None)
     }
 
 
+# ── Carrier Launch Station (Spec 3) ───────────────────────────────────────────
+
+# In-memory carrier state
+_carrier_manager = None
+
+
+def _get_carrier():
+    global _carrier_manager
+    if _carrier_manager is None:
+        from radar_drone_vision.drone_show.carrier.bay_manager import BayManager, CarrierConfig
+        _carrier_manager = BayManager(CarrierConfig(bay_count=60, reserve_count=10))
+    return _carrier_manager
+
+
+@router.get("/carrier/inventory")
+async def get_carrier_inventory():
+    """Get current carrier bay inventory."""
+    return _get_carrier().get_inventory()
+
+
+@router.post("/carrier/configure")
+async def configure_carrier(body: dict):
+    """Configure carrier parameters.
+
+    Body: { bay_count?, reserve_count?, max_launch_slots?,
+            max_recovery_slots?, vehicle_dims? }
+    """
+    global _carrier_manager
+    from radar_drone_vision.drone_show.carrier.bay_manager import BayManager, CarrierConfig
+
+    config = CarrierConfig(
+        bay_count=body.get("bay_count", 60),
+        reserve_count=body.get("reserve_count", 10),
+        max_launch_slots=body.get("max_launch_slots", 4),
+        max_recovery_slots=body.get("max_recovery_slots", 2),
+    )
+    _carrier_manager = BayManager(config)
+    logger.info("Carrier configured: %d bays, %d reserves", config.bay_count, config.reserve_count)
+    return _carrier_manager.get_inventory()
+
+
+@router.post("/carrier/plan-launch")
+async def plan_carrier_launch(body: dict):
+    """Plan a carrier-based launch schedule for a show.
+
+    Body: { frame_id?, drone_count?, launch_interval_sec? }
+    Uses formation points from a frame if provided.
+    """
+    from radar_drone_vision.drone_show.carrier.launch_scheduler import (
+        plan_launch_schedule, create_wait_zones
+    )
+
+    carrier = _get_carrier()
+    frame_id = body.get("frame_id")
+    drone_count = body.get("drone_count", 50)
+
+    # Get formation points
+    formation_points = []
+    if frame_id:
+        frame_path = PLANS_DIR / f"{frame_id}.json"
+        if frame_path.exists():
+            with open(frame_path) as f:
+                frame_data = json.load(f)
+            formation_points = frame_data.get("points", [])
+
+    if not formation_points:
+        formation_points = [{"point_id": f"P{i+1:04d}"} for i in range(drone_count)]
+
+    wait_zones = create_wait_zones(carrier.config.position)
+    schedule = plan_launch_schedule(
+        carrier,
+        formation_points,
+        wait_zones=wait_zones,
+        launch_interval_sec=body.get("launch_interval_sec", 3.0),
+    )
+
+    # Save
+    sched_path = PLANS_DIR / f"launch_{schedule['show_id']}.json"
+    with open(sched_path, "w") as f:
+        json.dump(schedule, f, indent=2)
+
+    logger.info("Launch schedule: %d drones, %d waves, all-in at %.1fs",
+                schedule["total_drones"], schedule["total_waves"],
+                schedule["all_in_formation_time_sec"])
+    return schedule
+
+
+@router.post("/carrier/plan-recovery")
+async def plan_carrier_recovery(body: dict):
+    """Plan recovery schedule after show completion.
+
+    Body: { show_id }
+    """
+    show_id = body.get("show_id", "")
+    sched_path = list(PLANS_DIR.glob(f"launch_{show_id}.json"))
+    if not sched_path:
+        # Try to find any launch schedule
+        sched_path = list(PLANS_DIR.glob("launch_*.json"))
+    if not sched_path:
+        raise HTTPException(404, "No launch schedule found")
+
+    with open(sched_path[0]) as f:
+        launch_schedule = json.load(f)
+
+    from radar_drone_vision.drone_show.carrier.launch_scheduler import plan_recovery_schedule
+    recovery = plan_recovery_schedule(
+        _get_carrier(),
+        launch_schedule,
+        recovery_interval_sec=body.get("recovery_interval_sec", 4.0),
+    )
+
+    return recovery
+
+
+@router.post("/carrier/simulate-charging")
+async def simulate_charging(body: dict):
+    """Simulate charging cycle for all docked drones.
+
+    Body: { minutes?, rate_per_min? }
+    """
+    carrier = _get_carrier()
+    minutes = body.get("minutes", 30.0)
+    rate = body.get("rate_per_min", 2.0)
+    carrier.simulate_charging(minutes=minutes, rate_per_min=rate)
+
+    inventory = carrier.get_inventory()
+    return {
+        "charged_minutes": minutes,
+        "rate_per_min": rate,
+        "ready": inventory["ready"],
+        "charging": inventory["charging"],
+        "safety": "SIMULATION_ONLY",
+    }
+
+
 # ── Status / Info ────────────────────────────────────────────────────────────
 
 @router.get("/status")

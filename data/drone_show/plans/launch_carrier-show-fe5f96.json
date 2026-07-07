@@ -1,0 +1,1015 @@
+{
+  "schema": "launch_schedule.v1",
+  "mode": "SIMULATION_ONLY",
+  "show_id": "carrier-show-fe5f96",
+  "carrier": "EV Drone Carrier A",
+  "total_drones": 50,
+  "total_waves": 13,
+  "drones_per_wave": 4,
+  "wave_interval_sec": 8.0,
+  "all_in_formation_time_sec": 107.8,
+  "wait_zones": [
+    {
+      "zone_id": "WZ-A-01",
+      "center": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "radius": 15.0,
+      "altitude_layer": 0,
+      "assigned_count": 13
+    },
+    {
+      "zone_id": "WZ-B-02",
+      "center": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "radius": 15.0,
+      "altitude_layer": 1,
+      "assigned_count": 13
+    },
+    {
+      "zone_id": "WZ-C-03",
+      "center": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "radius": 15.0,
+      "altitude_layer": 2,
+      "assigned_count": 12
+    },
+    {
+      "zone_id": "WZ-D-04",
+      "center": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "radius": 15.0,
+      "altitude_layer": 3,
+      "assigned_count": 12
+    }
+  ],
+  "energy_budget": {
+    "avg_battery_at_formation": 94.4,
+    "min_battery_at_formation": 92,
+    "estimated_show_drain_percent": 15,
+    "estimated_recovery_drain_percent": 5
+  },
+  "launch_plan": [
+    {
+      "wave": 1,
+      "slot_index": 0,
+      "time_offset_sec": 0.0,
+      "drone_id": "D0001",
+      "bay_id": "BAY-01",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 5.0,
+      "formation_entry_time": 9.0,
+      "first_formation_point": "P0001",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 1,
+      "slot_index": 1,
+      "time_offset_sec": 0.8,
+      "drone_id": "D0002",
+      "bay_id": "BAY-02",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 5.8,
+      "formation_entry_time": 9.8,
+      "first_formation_point": "P0002",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 1,
+      "slot_index": 2,
+      "time_offset_sec": 1.5,
+      "drone_id": "D0003",
+      "bay_id": "BAY-03",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 6.5,
+      "formation_entry_time": 10.5,
+      "first_formation_point": "P0003",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 1,
+      "slot_index": 3,
+      "time_offset_sec": 2.2,
+      "drone_id": "D0004",
+      "bay_id": "BAY-04",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 7.2,
+      "formation_entry_time": 11.2,
+      "first_formation_point": "P0004",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 2,
+      "slot_index": 0,
+      "time_offset_sec": 8.0,
+      "drone_id": "D0005",
+      "bay_id": "BAY-05",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 13.0,
+      "formation_entry_time": 17.0,
+      "first_formation_point": "P0005",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 2,
+      "slot_index": 1,
+      "time_offset_sec": 8.8,
+      "drone_id": "D0006",
+      "bay_id": "BAY-06",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 13.8,
+      "formation_entry_time": 17.8,
+      "first_formation_point": "P0006",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 2,
+      "slot_index": 2,
+      "time_offset_sec": 9.5,
+      "drone_id": "D0007",
+      "bay_id": "BAY-07",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 14.5,
+      "formation_entry_time": 18.5,
+      "first_formation_point": "P0007",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 2,
+      "slot_index": 3,
+      "time_offset_sec": 10.2,
+      "drone_id": "D0008",
+      "bay_id": "BAY-08",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 15.2,
+      "formation_entry_time": 19.2,
+      "first_formation_point": "P0008",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 3,
+      "slot_index": 0,
+      "time_offset_sec": 16.0,
+      "drone_id": "D0009",
+      "bay_id": "BAY-09",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 21.0,
+      "formation_entry_time": 25.0,
+      "first_formation_point": "P0009",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 3,
+      "slot_index": 1,
+      "time_offset_sec": 16.8,
+      "drone_id": "D0010",
+      "bay_id": "BAY-10",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 21.8,
+      "formation_entry_time": 25.8,
+      "first_formation_point": "P0010",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 3,
+      "slot_index": 2,
+      "time_offset_sec": 17.5,
+      "drone_id": "D0011",
+      "bay_id": "BAY-11",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 22.5,
+      "formation_entry_time": 26.5,
+      "first_formation_point": "P0011",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 3,
+      "slot_index": 3,
+      "time_offset_sec": 18.2,
+      "drone_id": "D0012",
+      "bay_id": "BAY-12",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 23.2,
+      "formation_entry_time": 27.2,
+      "first_formation_point": "P0012",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 4,
+      "slot_index": 0,
+      "time_offset_sec": 24.0,
+      "drone_id": "D0013",
+      "bay_id": "BAY-13",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 29.0,
+      "formation_entry_time": 33.0,
+      "first_formation_point": "P0013",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 4,
+      "slot_index": 1,
+      "time_offset_sec": 24.8,
+      "drone_id": "D0014",
+      "bay_id": "BAY-14",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 29.8,
+      "formation_entry_time": 33.8,
+      "first_formation_point": "P0014",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 4,
+      "slot_index": 2,
+      "time_offset_sec": 25.5,
+      "drone_id": "D0015",
+      "bay_id": "BAY-15",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 30.5,
+      "formation_entry_time": 34.5,
+      "first_formation_point": "P0015",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 4,
+      "slot_index": 3,
+      "time_offset_sec": 26.2,
+      "drone_id": "D0016",
+      "bay_id": "BAY-16",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 31.2,
+      "formation_entry_time": 35.2,
+      "first_formation_point": "P0016",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 5,
+      "slot_index": 0,
+      "time_offset_sec": 32.0,
+      "drone_id": "D0017",
+      "bay_id": "BAY-17",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 37.0,
+      "formation_entry_time": 41.0,
+      "first_formation_point": "P0017",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 5,
+      "slot_index": 1,
+      "time_offset_sec": 32.8,
+      "drone_id": "D0018",
+      "bay_id": "BAY-18",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 37.8,
+      "formation_entry_time": 41.8,
+      "first_formation_point": "P0018",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 5,
+      "slot_index": 2,
+      "time_offset_sec": 33.5,
+      "drone_id": "D0019",
+      "bay_id": "BAY-19",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 38.5,
+      "formation_entry_time": 42.5,
+      "first_formation_point": "P0019",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 5,
+      "slot_index": 3,
+      "time_offset_sec": 34.2,
+      "drone_id": "D0020",
+      "bay_id": "BAY-20",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 39.2,
+      "formation_entry_time": 43.2,
+      "first_formation_point": "P0020",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 6,
+      "slot_index": 0,
+      "time_offset_sec": 40.0,
+      "drone_id": "D0021",
+      "bay_id": "BAY-21",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 45.0,
+      "formation_entry_time": 49.0,
+      "first_formation_point": "P0021",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 6,
+      "slot_index": 1,
+      "time_offset_sec": 40.8,
+      "drone_id": "D0022",
+      "bay_id": "BAY-22",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 45.8,
+      "formation_entry_time": 49.8,
+      "first_formation_point": "P0022",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 6,
+      "slot_index": 2,
+      "time_offset_sec": 41.5,
+      "drone_id": "D0023",
+      "bay_id": "BAY-23",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 46.5,
+      "formation_entry_time": 50.5,
+      "first_formation_point": "P0023",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 6,
+      "slot_index": 3,
+      "time_offset_sec": 42.2,
+      "drone_id": "D0024",
+      "bay_id": "BAY-24",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 47.2,
+      "formation_entry_time": 51.2,
+      "first_formation_point": "P0024",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 7,
+      "slot_index": 0,
+      "time_offset_sec": 48.0,
+      "drone_id": "D0025",
+      "bay_id": "BAY-25",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 53.0,
+      "formation_entry_time": 57.0,
+      "first_formation_point": "P0025",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 7,
+      "slot_index": 1,
+      "time_offset_sec": 48.8,
+      "drone_id": "D0026",
+      "bay_id": "BAY-26",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 53.8,
+      "formation_entry_time": 57.8,
+      "first_formation_point": "P0026",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 7,
+      "slot_index": 2,
+      "time_offset_sec": 49.5,
+      "drone_id": "D0027",
+      "bay_id": "BAY-27",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 54.5,
+      "formation_entry_time": 58.5,
+      "first_formation_point": "P0027",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 7,
+      "slot_index": 3,
+      "time_offset_sec": 50.2,
+      "drone_id": "D0028",
+      "bay_id": "BAY-28",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 55.2,
+      "formation_entry_time": 59.2,
+      "first_formation_point": "P0028",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 8,
+      "slot_index": 0,
+      "time_offset_sec": 56.0,
+      "drone_id": "D0029",
+      "bay_id": "BAY-29",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 61.0,
+      "formation_entry_time": 65.0,
+      "first_formation_point": "P0029",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 8,
+      "slot_index": 1,
+      "time_offset_sec": 56.8,
+      "drone_id": "D0030",
+      "bay_id": "BAY-30",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 61.8,
+      "formation_entry_time": 65.8,
+      "first_formation_point": "P0030",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 8,
+      "slot_index": 2,
+      "time_offset_sec": 57.5,
+      "drone_id": "D0031",
+      "bay_id": "BAY-31",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 62.5,
+      "formation_entry_time": 66.5,
+      "first_formation_point": "P0031",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 8,
+      "slot_index": 3,
+      "time_offset_sec": 58.2,
+      "drone_id": "D0032",
+      "bay_id": "BAY-32",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 63.2,
+      "formation_entry_time": 67.2,
+      "first_formation_point": "P0032",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 9,
+      "slot_index": 0,
+      "time_offset_sec": 64.0,
+      "drone_id": "D0033",
+      "bay_id": "BAY-33",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 69.0,
+      "formation_entry_time": 73.0,
+      "first_formation_point": "P0033",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 9,
+      "slot_index": 1,
+      "time_offset_sec": 64.8,
+      "drone_id": "D0034",
+      "bay_id": "BAY-34",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 69.8,
+      "formation_entry_time": 73.8,
+      "first_formation_point": "P0034",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 9,
+      "slot_index": 2,
+      "time_offset_sec": 65.5,
+      "drone_id": "D0035",
+      "bay_id": "BAY-35",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 70.5,
+      "formation_entry_time": 74.5,
+      "first_formation_point": "P0035",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 9,
+      "slot_index": 3,
+      "time_offset_sec": 66.2,
+      "drone_id": "D0036",
+      "bay_id": "BAY-36",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 71.2,
+      "formation_entry_time": 75.2,
+      "first_formation_point": "P0036",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 10,
+      "slot_index": 0,
+      "time_offset_sec": 72.0,
+      "drone_id": "D0037",
+      "bay_id": "BAY-37",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 77.0,
+      "formation_entry_time": 81.0,
+      "first_formation_point": "P0037",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 10,
+      "slot_index": 1,
+      "time_offset_sec": 72.8,
+      "drone_id": "D0038",
+      "bay_id": "BAY-38",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 77.8,
+      "formation_entry_time": 81.8,
+      "first_formation_point": "P0038",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 10,
+      "slot_index": 2,
+      "time_offset_sec": 73.5,
+      "drone_id": "D0039",
+      "bay_id": "BAY-39",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 78.5,
+      "formation_entry_time": 82.5,
+      "first_formation_point": "P0039",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 10,
+      "slot_index": 3,
+      "time_offset_sec": 74.2,
+      "drone_id": "D0040",
+      "bay_id": "BAY-40",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 79.2,
+      "formation_entry_time": 83.2,
+      "first_formation_point": "P0040",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 11,
+      "slot_index": 0,
+      "time_offset_sec": 80.0,
+      "drone_id": "D0041",
+      "bay_id": "BAY-41",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 85.0,
+      "formation_entry_time": 89.0,
+      "first_formation_point": "P0041",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 11,
+      "slot_index": 1,
+      "time_offset_sec": 80.8,
+      "drone_id": "D0042",
+      "bay_id": "BAY-42",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 85.8,
+      "formation_entry_time": 89.8,
+      "first_formation_point": "P0042",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 11,
+      "slot_index": 2,
+      "time_offset_sec": 81.5,
+      "drone_id": "D0043",
+      "bay_id": "BAY-43",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 86.5,
+      "formation_entry_time": 90.5,
+      "first_formation_point": "P0043",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 11,
+      "slot_index": 3,
+      "time_offset_sec": 82.2,
+      "drone_id": "D0044",
+      "bay_id": "BAY-44",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 87.2,
+      "formation_entry_time": 91.2,
+      "first_formation_point": "P0044",
+      "estimated_battery_at_formation": 93
+    },
+    {
+      "wave": 12,
+      "slot_index": 0,
+      "time_offset_sec": 88.0,
+      "drone_id": "D0045",
+      "bay_id": "BAY-45",
+      "battery_at_launch": 97,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 93.0,
+      "formation_entry_time": 97.0,
+      "first_formation_point": "P0045",
+      "estimated_battery_at_formation": 94
+    },
+    {
+      "wave": 12,
+      "slot_index": 1,
+      "time_offset_sec": 88.8,
+      "drone_id": "D0046",
+      "bay_id": "BAY-46",
+      "battery_at_launch": 98,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 93.8,
+      "formation_entry_time": 97.8,
+      "first_formation_point": "P0046",
+      "estimated_battery_at_formation": 95
+    },
+    {
+      "wave": 12,
+      "slot_index": 2,
+      "time_offset_sec": 89.5,
+      "drone_id": "D0047",
+      "bay_id": "BAY-47",
+      "battery_at_launch": 99,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-C-03",
+      "wait_zone_position": [
+        0.0,
+        -30.0,
+        45.0
+      ],
+      "wait_arrival_time": 94.5,
+      "formation_entry_time": 98.5,
+      "first_formation_point": "P0047",
+      "estimated_battery_at_formation": 96
+    },
+    {
+      "wave": 12,
+      "slot_index": 3,
+      "time_offset_sec": 90.2,
+      "drone_id": "D0048",
+      "bay_id": "BAY-48",
+      "battery_at_launch": 100,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-D-04",
+      "wait_zone_position": [
+        -30.0,
+        -0.0,
+        55.0
+      ],
+      "wait_arrival_time": 95.2,
+      "formation_entry_time": 99.2,
+      "first_formation_point": "P0048",
+      "estimated_battery_at_formation": 97
+    },
+    {
+      "wave": 13,
+      "slot_index": 0,
+      "time_offset_sec": 96.0,
+      "drone_id": "D0049",
+      "bay_id": "BAY-49",
+      "battery_at_launch": 95,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-A-01",
+      "wait_zone_position": [
+        0.0,
+        30.0,
+        25.0
+      ],
+      "wait_arrival_time": 101.0,
+      "formation_entry_time": 105.0,
+      "first_formation_point": "P0049",
+      "estimated_battery_at_formation": 92
+    },
+    {
+      "wave": 13,
+      "slot_index": 1,
+      "time_offset_sec": 96.8,
+      "drone_id": "D0050",
+      "bay_id": "BAY-50",
+      "battery_at_launch": 96,
+      "led_state_during_ascent": "off",
+      "target_wait_zone": "WZ-B-02",
+      "wait_zone_position": [
+        30.0,
+        0.0,
+        35.0
+      ],
+      "wait_arrival_time": 101.8,
+      "formation_entry_time": 105.8,
+      "first_formation_point": "P0050",
+      "estimated_battery_at_formation": 93
+    }
+  ]
+}
