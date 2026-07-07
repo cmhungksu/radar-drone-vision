@@ -315,6 +315,231 @@ async def download_render_file(render_id: str, filename: str):
     return FileResponse(file_path, filename=filename)
 
 
+# ── LLM Scene DSL ────────────────────────────────────────────────────────────
+
+@router.post("/dsl/compile")
+async def compile_scene_dsl(body: dict):
+    """Compile a Scene DSL (YAML or dict) into a planning job.
+
+    Body: { yaml?: string, scene?: dict }
+    Accepts either raw YAML string or pre-parsed dict.
+
+    LLM generates the DSL; this endpoint validates and compiles it.
+    SIMULATION_ONLY — no real flight control output.
+    """
+    from radar_drone_vision.drone_show.scene_dsl import compile_dsl, parse_yaml_dsl
+
+    yaml_text = body.get("yaml")
+    scene_dict = body.get("scene")
+
+    if yaml_text:
+        try:
+            dsl = parse_yaml_dsl(yaml_text)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    elif scene_dict:
+        dsl = {"scene": scene_dict}
+    else:
+        raise HTTPException(400, "Provide 'yaml' (string) or 'scene' (dict)")
+
+    result = compile_dsl(dsl, assets_dir=ASSETS_DIR)
+
+    if not result.get("success"):
+        raise HTTPException(422, detail={"errors": result.get("errors", [])})
+
+    # Save compiled job
+    job_path = PLANS_DIR / f"{result['job_id']}.json"
+    with open(job_path, "w") as f:
+        json.dump(result, f, indent=2)
+
+    logger.info("DSL compiled: %s (%d drones, %d frames)",
+                result["title"], result["drone_count"], result["frame_count"])
+    return result
+
+
+@router.post("/dsl/execute/{job_id}")
+async def execute_dsl_job(job_id: str):
+    """Execute a compiled DSL job — generate formations and plan.
+
+    Runs each frame in sequence: image_formation → generate points,
+    transform → apply ops, then plans transitions between frames.
+    """
+    job_path = PLANS_DIR / f"{job_id}.json"
+    if not job_path.exists():
+        raise HTTPException(404, f"DSL job not found: {job_id}")
+
+    with open(job_path) as f:
+        job = json.load(f)
+
+    if not job.get("success"):
+        raise HTTPException(400, "Job was not successfully compiled")
+
+    drone_count = job["drone_count"]
+    compiled_frames = job.get("frames", [])
+    generated_frame_ids = []
+    results = []
+
+    from radar_drone_vision.drone_show.image_to_points import generate_formation_from_image
+    from radar_drone_vision.drone_show.schemas import FormationFrame, FormationPoint
+    import copy, math, numpy as np
+
+    current_frame = None  # track the latest formation for transforms
+
+    for cf in compiled_frames:
+        action = cf.get("action", "")
+
+        if action == "generate_formation_from_image":
+            asset_path = cf.get("asset_resolved")
+            if not asset_path:
+                # Try to find asset by name
+                asset_name = cf.get("asset", "")
+                candidates = list(ASSETS_DIR.glob(f"*{asset_name}*")) if asset_name else []
+                if not candidates:
+                    candidates = list(ASSETS_DIR.glob("asset_*"))
+                asset_path = str(candidates[0]) if candidates else None
+
+            if asset_path:
+                try:
+                    frame, palette = generate_formation_from_image(
+                        asset_path, drone_count=drone_count,
+                        z_height=50.0, scale=cf.get("scale", 1.0))
+                    # Save frame
+                    frame_path = PLANS_DIR / f"{frame.frame_id}.json"
+                    with open(frame_path, "w") as f:
+                        json.dump(frame.model_dump(), f, indent=2)
+                    generated_frame_ids.append(frame.frame_id)
+                    current_frame = frame
+                    results.append({"frame_id": frame.frame_id, "type": "image_formation",
+                                    "points": len(frame.points), "detail": frame.detail_score})
+                except Exception as exc:
+                    results.append({"type": "image_formation", "error": str(exc)})
+            else:
+                results.append({"type": "image_formation", "error": "Asset not found"})
+
+        elif action == "apply_transform_to_current_formation" and current_frame:
+            # Apply geometric transforms to current formation
+            new_points = []
+            ops = cf.get("parsed_ops", [])
+            for p in current_frame.points:
+                x, y, z = p.xyz
+                for op in ops:
+                    if op["op"] == "scale":
+                        factor = op.get("factor", 1.0)
+                        axis = op.get("axis")
+                        if axis == "x":
+                            x *= factor
+                        elif axis == "y":
+                            y *= factor
+                        else:
+                            x *= factor
+                            y *= factor
+                    elif op["op"] == "translate":
+                        x += op.get("dx", 0)
+                        y += op.get("dy", 0)
+                        z += op.get("dz", 0)
+                    elif op["op"] == "rotate":
+                        angle = math.radians(op.get("angle", 0))
+                        nx = x * math.cos(angle) - y * math.sin(angle)
+                        ny = x * math.sin(angle) + y * math.cos(angle)
+                        x, y = nx, ny
+                    elif op["op"] == "color":
+                        from radar_drone_vision.drone_show.led import rgb888_to_rgb565
+                        rgb = op.get("rgb", p.rgb888)
+                        p = FormationPoint(**{**p.model_dump(), "rgb888": rgb,
+                                              "rgb565": rgb888_to_rgb565(*rgb)})
+
+                new_points.append(FormationPoint(**{**p.model_dump(),
+                                                    "xyz": [round(x, 2), round(y, 2), round(z, 2)]}))
+
+            new_frame = FormationFrame(
+                frame_id=f"frame_{uuid.uuid4().hex[:8]}",
+                points=new_points, drone_count=drone_count,
+                detail_score=current_frame.detail_score,
+                warnings=[], image_width=current_frame.image_width,
+                image_height=current_frame.image_height)
+            frame_path = PLANS_DIR / f"{new_frame.frame_id}.json"
+            with open(frame_path, "w") as f:
+                json.dump(new_frame.model_dump(), f, indent=2)
+            generated_frame_ids.append(new_frame.frame_id)
+            current_frame = new_frame
+            results.append({"frame_id": new_frame.frame_id, "type": "transform",
+                            "ops": [o["op"] for o in ops]})
+
+        elif action == "change_led_colors" and current_frame:
+            rgb = cf.get("color", [255, 255, 255])
+            from radar_drone_vision.drone_show.led import rgb888_to_rgb565
+            new_points = [FormationPoint(**{**p.model_dump(), "rgb888": rgb,
+                                            "rgb565": rgb888_to_rgb565(*rgb)})
+                          for p in current_frame.points]
+            new_frame = FormationFrame(
+                frame_id=f"frame_{uuid.uuid4().hex[:8]}",
+                points=new_points, drone_count=drone_count,
+                detail_score=current_frame.detail_score, warnings=[])
+            frame_path = PLANS_DIR / f"{new_frame.frame_id}.json"
+            with open(frame_path, "w") as f:
+                json.dump(new_frame.model_dump(), f, indent=2)
+            generated_frame_ids.append(new_frame.frame_id)
+            current_frame = new_frame
+            results.append({"frame_id": new_frame.frame_id, "type": "color_change"})
+
+        else:
+            results.append({"type": cf.get("type", "unknown"), "action": action, "skipped": True})
+
+    # If we have multiple image frames, create a storyboard plan
+    plan_result = None
+    if len(generated_frame_ids) >= 1:
+        try:
+            from radar_drone_vision.drone_show.schemas import FormationFrame as FF
+            from radar_drone_vision.drone_show.storyboard import create_multi_frame_timeline
+
+            frames = []
+            for fid in generated_frame_ids:
+                fp = PLANS_DIR / f"{fid}.json"
+                if fp.exists():
+                    with open(fp) as f:
+                        frames.append(FF(**json.load(f)))
+
+            if frames:
+                plan, risk = create_multi_frame_timeline(frames)
+                plan_path = PLANS_DIR / f"{plan.plan_id}.json"
+                with open(plan_path, "w") as f:
+                    json.dump(plan.model_dump(), f)
+                plan_result = {
+                    "plan_id": plan.plan_id,
+                    "drone_count": plan.drone_count,
+                    "total_duration_sec": plan.total_duration_sec,
+                    "frames": plan.frames,
+                    "risk": risk,
+                }
+        except Exception as exc:
+            plan_result = {"error": str(exc)}
+
+    return {
+        "job_id": job_id,
+        "executed_frames": results,
+        "generated_frame_ids": generated_frame_ids,
+        "plan": plan_result,
+        "safety": "SIMULATION_ONLY",
+    }
+
+
+@router.post("/dsl/parse-instruction")
+async def parse_natural_instruction(body: dict):
+    """Parse a natural language instruction into geometric operations.
+
+    Body: { instruction: string }
+    Used by LLM to preview what operations will be applied.
+    """
+    from radar_drone_vision.drone_show.scene_dsl import parse_instruction
+
+    instruction = body.get("instruction", "")
+    if not instruction:
+        raise HTTPException(400, "instruction is required")
+
+    result = parse_instruction(instruction)
+    return result
+
+
 # ── Multi-Frame Storyboard ────────────────────────────────────────────────────
 
 @router.post("/storyboard/plan")

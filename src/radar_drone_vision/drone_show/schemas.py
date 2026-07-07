@@ -31,7 +31,7 @@ class FormationFrame(BaseModel):
 class PointGenRequest(BaseModel):
     """Request to generate formation points from an uploaded image."""
     asset_id: str
-    drone_count: int = Field(default=50, ge=5, le=2000)
+    drone_count: int = Field(default=50, ge=5, le=10000)
     z_height: float = Field(default=50.0, ge=10.0, le=200.0)
     scale: float = Field(default=1.0, ge=0.1, le=5.0)
 

@@ -44,6 +44,7 @@ export default function DroneShowStudio() {
   const [assetId, setAssetId] = useState<string | null>(null);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [droneCount, setDroneCount] = useState(50);
+  const [customCount, setCustomCount] = useState('');
   const [points, setPoints] = useState<PointPreview[]>([]);
   const [frameId, setFrameId] = useState<string | null>(null);
   const [detailScore, setDetailScore] = useState(0);
@@ -53,6 +54,27 @@ export default function DroneShowStudio() {
   const [simReport, setSimReport] = useState<SimReport | null>(null);
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [loading, setLoading] = useState('');
+  const [dslYaml, setDslYaml] = useState(`scene:
+  title: "Demo Show"
+  drones: 50
+  safety_profile: "safety_first"
+  frames:
+    - id: "takeoff"
+      type: "takeoff_blue"
+      duration: 8
+    - id: "logo"
+      type: "image_formation"
+      asset: "logo.png"
+      hold: 6
+      scale: 1.0
+    - id: "expand"
+      type: "transform"
+      instruction: "放大 20%"
+      duration: 5
+    - id: "landing"
+      type: "landing_blue"
+      duration: 8`);
+  const [dslResult, setDslResult] = useState<Record<string, unknown> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -147,6 +169,43 @@ export default function DroneShowStudio() {
     }
     setLoading('');
   }, [plan]);
+
+  // Compile & execute DSL
+  const handleCompileDsl = useCallback(async () => {
+    setLoading('compiling');
+    try {
+      const compileRes = await fetch(`${API_BASE}/dsl/compile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ yaml: dslYaml }),
+      });
+      const compiled = await compileRes.json();
+      if (compiled.errors) {
+        setDslResult({ success: false, errors: compiled.errors || compiled.detail?.errors });
+        setLoading('');
+        return;
+      }
+      // Execute
+      const execRes = await fetch(`${API_BASE}/dsl/execute/${compiled.job_id}`, { method: 'POST' });
+      const execData = await execRes.json();
+      setDslResult(execData);
+
+      // Update plan if available
+      if (execData.plan?.plan_id) {
+        setPlan({
+          plan_id: execData.plan.plan_id,
+          drone_count: execData.plan.drone_count,
+          total_duration_sec: execData.plan.total_duration_sec,
+          risk: execData.plan.risk,
+          drone_preview: [],
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setDslResult({ success: false, errors: [String(err)] });
+    }
+    setLoading('');
+  }, [dslYaml]);
 
   // Add obstacle preset
   const handleAddObstacle = useCallback(async (preset: typeof OBS_PRESETS[0]) => {
@@ -321,16 +380,36 @@ export default function DroneShowStudio() {
 
         <div className="card">
           <h3 className="card-header">2. 設定參數</h3>
-          <label className="text-xs text-slate-400 block mb-2">無人機數量</label>
-          <div className="flex gap-2 mb-4">
+          <label className="text-xs text-slate-400 block mb-2">無人機數量 (5 ~ 10,000)</label>
+          <div className="flex gap-2 mb-2">
             {[20, 50, 100, 200].map(n => (
-              <button key={n} onClick={() => setDroneCount(n)}
+              <button key={n} onClick={() => { setDroneCount(n); setCustomCount(''); }}
                 className={`flex-1 py-2 rounded-md text-sm font-mono border transition-all ${
-                  droneCount === n
+                  droneCount === n && !customCount
                     ? 'bg-green-900/50 border-green-500 text-green-400'
                     : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}>{n}</button>
             ))}
+          </div>
+          <div className="flex gap-2 mb-4">
+            <input
+              type="number" min={5} max={10000} step={10}
+              value={customCount}
+              onChange={e => {
+                setCustomCount(e.target.value);
+                const v = parseInt(e.target.value);
+                if (v >= 5 && v <= 10000) setDroneCount(v);
+              }}
+              placeholder="自訂數量 (200+)"
+              className={`flex-1 bg-slate-800 border rounded-md px-3 py-2 text-sm font-mono focus:outline-none transition-all ${
+                customCount ? 'border-green-500 text-green-400' : 'border-slate-700 text-slate-400'
+              }`}
+            />
+            {customCount && (
+              <span className="flex items-center text-xs text-green-400 font-mono">
+                {droneCount.toLocaleString()} 台
+              </span>
+            )}
           </div>
           <button onClick={handleGenerate} disabled={!assetId || loading !== ''}
             className="w-full py-2.5 rounded-md bg-green-600 text-white font-medium text-sm hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
@@ -462,6 +541,83 @@ export default function DroneShowStudio() {
         {obstacles.length === 0 && (
           <p className="text-xs text-slate-500">尚未新增障礙物。點擊上方按鈕新增預設障礙，或使用 API 自定義。</p>
         )}
+      </div>
+
+      {/* ═══ LLM Scene DSL ═══ */}
+      <div className="card">
+        <h3 className="card-header">
+          Scene DSL 編輯器
+          <span className="text-slate-500 font-normal text-xs ml-2">YAML 動畫腳本 — LLM 可直接產生</span>
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <textarea
+              value={dslYaml}
+              onChange={e => setDslYaml(e.target.value)}
+              rows={16}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-xs font-mono text-green-300 focus:outline-none focus:border-green-500 resize-y"
+              spellCheck={false}
+            />
+            <button onClick={handleCompileDsl} disabled={loading === 'compiling'}
+              className="mt-2 w-full py-2.5 rounded-md bg-purple-600 text-white font-medium text-sm hover:bg-purple-500 disabled:opacity-40 transition-all">
+              {loading === 'compiling' ? 'Compiling & Executing...' : 'Compile & Execute DSL'}
+            </button>
+          </div>
+          <div className="text-xs">
+            {dslResult && (
+              <div className="space-y-2">
+                {(dslResult as any).success === false ? (
+                  <div className="rounded-lg bg-red-900/20 border border-red-800/30 p-3">
+                    <p className="text-red-400 font-semibold mb-1">Compilation Errors</p>
+                    {((dslResult as any).errors || []).map((e: string, i: number) => (
+                      <p key={i} className="text-red-300">{e}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-lg bg-green-900/20 border border-green-800/30 p-3">
+                      <p className="text-green-400 font-semibold mb-1">Execution Complete</p>
+                      <p className="text-slate-400">Job: <span className="text-white font-mono">{(dslResult as any).job_id}</span></p>
+                      <p className="text-slate-400">Frames generated: <span className="text-white">{((dslResult as any).generated_frame_ids || []).length}</span></p>
+                    </div>
+                    {(dslResult as any).executed_frames?.map((f: any, i: number) => (
+                      <div key={i} className={`rounded px-3 py-2 border ${f.error ? 'bg-red-900/10 border-red-800/20' : f.skipped ? 'bg-slate-800/50 border-slate-700/30' : 'bg-cyan-900/10 border-cyan-800/20'}`}>
+                        <span className={`font-mono ${f.error ? 'text-red-400' : f.skipped ? 'text-slate-500' : 'text-cyan-400'}`}>{f.type}</span>
+                        {f.frame_id && <span className="ml-2 text-slate-400">→ {f.frame_id}</span>}
+                        {f.points && <span className="ml-2 text-green-400">{f.points} pts</span>}
+                        {f.ops && <span className="ml-2 text-amber-400">[{f.ops.join(', ')}]</span>}
+                        {f.error && <span className="ml-2 text-red-300">{f.error}</span>}
+                        {f.skipped && <span className="ml-2 text-slate-500">(skipped)</span>}
+                      </div>
+                    ))}
+                    {(dslResult as any).plan && (
+                      <div className="rounded-lg bg-blue-900/20 border border-blue-800/30 p-3 mt-2">
+                        <p className="text-blue-400 font-semibold mb-1">Timeline Plan</p>
+                        <p className="text-slate-400">Plan: <span className="text-white font-mono">{(dslResult as any).plan.plan_id}</span></p>
+                        <p className="text-slate-400">Duration: <span className="text-white">{(dslResult as any).plan.total_duration_sec}s</span></p>
+                        <p className="text-slate-400">Min dist: <span className="text-white">{(dslResult as any).plan.risk?.min_drone_distance?.toFixed(2)}m</span></p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            {!dslResult && (
+              <div className="text-slate-500 p-4 space-y-2">
+                <p className="font-semibold text-slate-400">支援的 Frame Types:</p>
+                <p><span className="text-cyan-400 font-mono">takeoff_blue</span> — 藍色起飛</p>
+                <p><span className="text-cyan-400 font-mono">image_formation</span> — 圖片→隊形</p>
+                <p><span className="text-cyan-400 font-mono">transform</span> — 幾何變換（放大/縮小/旋轉/平移）</p>
+                <p><span className="text-cyan-400 font-mono">color_change</span> — LED 顏色切換</p>
+                <p><span className="text-cyan-400 font-mono">hold</span> — 定點停留</p>
+                <p><span className="text-cyan-400 font-mono">landing_blue</span> — 藍色降落</p>
+                <p className="mt-3 font-semibold text-slate-400">Transform 指令範例:</p>
+                <p className="text-slate-500">「放大 20%」「往上移動 10m」「順時針旋轉 30 度」</p>
+                <p className="text-slate-500">「左右展開 15%」「縮小到一半」「升高 20 公尺」</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ═══ Simulation ═══ */}

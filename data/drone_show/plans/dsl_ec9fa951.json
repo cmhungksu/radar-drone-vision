@@ -1,0 +1,53 @@
+{
+  "success": true,
+  "job_id": "dsl_ec9fa951",
+  "safety": "SIMULATION_ONLY",
+  "title": "Test Show",
+  "drone_count": 500,
+  "safety_profile": "safety_first",
+  "total_duration_sec": 27,
+  "frame_count": 4,
+  "frames": [
+    {
+      "frame_id": "takeoff",
+      "type": "takeoff_blue",
+      "duration": 8,
+      "action": "generate_ground_grid_and_takeoff"
+    },
+    {
+      "frame_id": "logo",
+      "type": "image_formation",
+      "asset": "logo.png",
+      "asset_resolved": null,
+      "hold": 6,
+      "fit": "center",
+      "scale": 1.0,
+      "action": "generate_formation_from_image",
+      "drone_count": 500
+    },
+    {
+      "frame_id": "expand",
+      "type": "transform",
+      "instruction": "\u653e\u5927 20%",
+      "parsed_ops": [
+        {
+          "op": "scale",
+          "factor": 1.2
+        }
+      ],
+      "duration": 5,
+      "action": "apply_transform_to_current_formation"
+    },
+    {
+      "frame_id": "landing",
+      "type": "landing_blue",
+      "duration": 8,
+      "action": "land_all_drones"
+    }
+  ],
+  "obstacles": [],
+  "warnings": [
+    "HIGH_COUNT: 200-1000 drones, high-detail formations possible"
+  ],
+  "compilation_version": "v1.0"
+}
