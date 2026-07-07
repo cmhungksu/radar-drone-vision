@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getMetrics, getMethodComparison, getFeatureDimSweep, type MetricsSummary, type MethodComparison, type FeatureDimResult } from '../api';
+import { getMetrics, getMethodComparison, getFeatureDimSweep, getRocComparison, type MetricsSummary, type MethodComparison, type FeatureDimResult, type RocComparison } from '../api';
 import ConfusionMatrix from '../components/ConfusionMatrix';
 import RocDetChart from '../components/RocDetChart';
+import RocComparisonChart from '../components/RocComparisonChart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const METHODS = [
@@ -30,6 +31,11 @@ export default function ModelEvaluation() {
   const { data: dimSweep } = useQuery<FeatureDimResult[]>({
     queryKey: ['featureDimSweep'],
     queryFn: getFeatureDimSweep,
+  });
+
+  const { data: rocComparison } = useQuery<RocComparison>({
+    queryKey: ['rocComparison'],
+    queryFn: getRocComparison,
   });
 
   return (
@@ -86,8 +92,45 @@ export default function ModelEvaluation() {
         </div>
       </div>
 
+      {/* ROC / DET Comparison (full width) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Confusion Matrix */}
+        <div className="card">
+          <h3 className="card-header">
+            ROC Curve — Multi-Method Comparison
+            <span className="text-slate-500 font-normal text-xs ml-2">Receiver Operating Characteristic</span>
+          </h3>
+          {rocComparison && Object.keys(rocComparison).length > 0 ? (
+            <RocComparisonChart data={rocComparison} mode="roc" />
+          ) : (
+            <div className="h-80 flex flex-col items-center justify-center text-slate-500 text-sm gap-2">
+              <span>No ROC data — generating curves...</span>
+              <span className="text-xs text-slate-600 font-mono">
+                Run: python scripts/precompute_roc.py
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="card">
+          <h3 className="card-header">
+            DET Curve — Multi-Method Comparison
+            <span className="text-slate-500 font-normal text-xs ml-2">Detection Error Tradeoff</span>
+          </h3>
+          {rocComparison && Object.keys(rocComparison).length > 0 ? (
+            <RocComparisonChart data={rocComparison} mode="det" />
+          ) : (
+            <div className="h-80 flex flex-col items-center justify-center text-slate-500 text-sm gap-2">
+              <span>No DET data — generating curves...</span>
+              <span className="text-xs text-slate-600 font-mono">
+                Run: python scripts/precompute_roc.py
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Confusion Matrix (single method) */}
         <div className="card">
           <h3 className="card-header">Confusion Matrix</h3>
           {metrics?.confusion_matrix && metrics.class_names ? (
@@ -97,40 +140,7 @@ export default function ModelEvaluation() {
             />
           ) : (
             <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
-              No evaluation data available
-            </div>
-          )}
-        </div>
-
-        {/* ROC Curve */}
-        <div className="card">
-          <h3 className="card-header">ROC Curve</h3>
-          {metrics?.roc_curve ? (
-            <RocDetChart
-              mode="roc"
-              fpr={metrics.roc_curve.fpr}
-              tprOrFnr={metrics.roc_curve.tpr}
-              auc={metrics.auc}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
-              No evaluation data available
-            </div>
-          )}
-        </div>
-
-        {/* DET Curve */}
-        <div className="card">
-          <h3 className="card-header">DET Curve</h3>
-          {metrics?.det_curve ? (
-            <RocDetChart
-              mode="det"
-              fpr={metrics.det_curve.fpr}
-              tprOrFnr={metrics.det_curve.fnr}
-            />
-          ) : (
-            <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
-              No evaluation data available
+              Select a method above to view confusion matrix
             </div>
           )}
         </div>

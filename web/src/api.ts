@@ -114,6 +114,18 @@ export interface FeatureDimResult {
   far_at_frr_1: number;
 }
 
+export interface RocMethodData {
+  roc: { fpr: number[]; tpr: number[] };
+  det: { fpr: number[]; fnr: number[] };
+  auc: number;
+  eer: number;
+  far_at_frr_1pct: number;
+  color: string;
+  dash: boolean;
+}
+
+export type RocComparison = Record<string, RocMethodData>;
+
 // ─── Dataset API ─────────────────────────────────────────────────────────────
 
 export async function getDatasets(): Promise<DatasetStatus[]> {
@@ -214,6 +226,15 @@ export async function getFeatureDimSweep(): Promise<FeatureDimResult[]> {
     return data;
   } catch {
     return [];
+  }
+}
+
+export async function getRocComparison(): Promise<RocComparison> {
+  try {
+    const { data } = await client.get('/reports/roc_comparison');
+    return data;
+  } catch {
+    return {};
   }
 }
 
