@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import DroneFlightAnimation from '../components/DroneFlightAnimation';
 
 const API_BASE = '/radar-viz/api/drone-show';
 
@@ -52,6 +53,7 @@ export default function DroneShowStudio() {
   const [plan, setPlan] = useState<PlanPreview | null>(null);
   const [renderImages, setRenderImages] = useState<string[]>([]);
   const [simReport, setSimReport] = useState<SimReport | null>(null);
+  const [animMode, setAnimMode] = useState<'2d' | '3d'>('2d');
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [loading, setLoading] = useState('');
   const [dslYaml, setDslYaml] = useState(`scene:
@@ -471,6 +473,29 @@ export default function DroneShowStudio() {
             style={{ filter: 'drop-shadow(0 0 20px rgba(22, 163, 74, 0.15))' }} />
         </div>
       </div>
+
+      {/* ═══ Flight Animation (2D / 3D) ═══ */}
+      {plan && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="card-header mb-0">
+              Flight Animation
+              <span className="text-slate-500 font-normal text-xs ml-2">Catmull-Rom smoothed Bezier paths</span>
+            </h3>
+            <div className="flex gap-1">
+              <button onClick={() => setAnimMode('2d')}
+                className={`px-3 py-1 text-xs font-mono rounded border transition-all ${
+                  animMode === '2d' ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                }`}>2D Top</button>
+              <button onClick={() => setAnimMode('3d')}
+                className={`px-3 py-1 text-xs font-mono rounded border transition-all ${
+                  animMode === '3d' ? 'bg-cyan-900/50 border-cyan-500 text-cyan-400' : 'bg-slate-800/50 border-slate-700 text-slate-400'
+                }`}>3D ISO</button>
+            </div>
+          </div>
+          <DroneFlightAnimation planId={plan.plan_id} mode={animMode} />
+        </div>
+      )}
 
       {/* Warnings */}
       {warnings.length > 0 && (
