@@ -302,14 +302,25 @@ export async function getLiveStats(): Promise<{ total: number; correct: number; 
 // ─── UAV Flight Mode ─────────────────────────────────────────────────────────
 
 export type UavFlightMode = 'outbound' | 'inbound' | 'swarm' | 'orbit' | 'hover' | 'transit';
+export type ClassifierMode = 'sra' | 'cnn' | 'ensemble';
 
-export async function setUavMode(mode: UavFlightMode): Promise<{ mode: string }> {
+export async function setUavMode(mode: UavFlightMode): Promise<{ mode: string; classifier?: string }> {
   const { data } = await client.post('/airspace/uav-mode', { mode });
   return data;
 }
 
 export async function getUavMode(): Promise<{ mode: string }> {
   const { data } = await client.get('/airspace/uav-mode');
+  return data;
+}
+
+export async function setClassifier(classifier: ClassifierMode): Promise<{ classifier: string }> {
+  const { data } = await client.post('/airspace/classifier', { classifier });
+  return data;
+}
+
+export async function getClassifier(): Promise<{ classifier: string }> {
+  const { data } = await client.get('/airspace/classifier');
   return data;
 }
 

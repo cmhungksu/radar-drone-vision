@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getAirspaceTargets, getLiveReplay, setUavMode, getUavMode, type AirspaceTarget, type LiveReplayResponse, type UavFlightMode } from '../api';
+import { getAirspaceTargets, getLiveReplay, setUavMode, getUavMode, setClassifier, getClassifier, type AirspaceTarget, type LiveReplayResponse, type UavFlightMode, type ClassifierMode } from '../api';
 import AirspaceCanvas from '../components/AirspaceCanvas';
 import RhiCanvas from '../components/RhiCanvas';
 
@@ -21,11 +21,18 @@ const UAV_MODE_OPTIONS: { value: UavFlightMode; label: string; desc: string }[] 
   { value: 'transit',   label: '高速穿越',     desc: '高速直線穿越扇區' },
 ];
 
+const CLASSIFIER_OPTIONS: { value: ClassifierMode; label: string; desc: string; speed: string; accuracy: string; color: string }[] = [
+  { value: 'sra',      label: 'SRA',      desc: '子空間可靠性分析 — 可解釋、極速',             speed: '<0.1ms', accuracy: 'AUC 0.78', color: 'green' },
+  { value: 'cnn',      label: 'CNN',      desc: 'Enhanced ResNet+SE — 最高精度',              speed: '~5ms',   accuracy: 'AUC 0.9997', color: 'blue' },
+  { value: 'ensemble', label: 'Ensemble', desc: 'SRA 快篩 + CNN 確認 — 速度與精度兼顧',       speed: '~1-5ms', accuracy: 'AUC 0.99+', color: 'amber' },
+];
+
 export default function AirspaceView() {
   const [radarMode, setRadarMode] = useState<RadarMode>('fmcw');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [liveEnabled, setLiveEnabled] = useState(true);
   const [uavModePending, setUavModePending] = useState(false);
+  const [classifierPending, setClassifierPending] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
@@ -41,15 +48,31 @@ export default function AirspaceView() {
     if (uavModePending) return;
     setUavModePending(true);
     try {
-      await setUavMode(mode);
-      // Invalidate the uavMode query so the active button reflects the new state
+      const result = await setUavMode(mode);
       queryClient.invalidateQueries({ queryKey: ['uavMode'] });
+      // If swarm mode auto-switched classifier, sync the UI
+      if (result.classifier) {
+        queryClient.invalidateQueries({ queryKey: ['classifierMode'] });
+      }
     } catch (err) {
       console.error('Failed to set UAV mode:', err);
     } finally {
       setUavModePending(false);
     }
   }, [uavModePending, queryClient]);
+
+  const handleClassifierChange = useCallback(async (clf: ClassifierMode) => {
+    if (classifierPending) return;
+    setClassifierPending(true);
+    try {
+      await setClassifier(clf);
+      queryClient.invalidateQueries({ queryKey: ['classifierMode'] });
+    } catch (err) {
+      console.error('Failed to set classifier:', err);
+    } finally {
+      setClassifierPending(false);
+    }
+  }, [classifierPending, queryClient]);
 
   // WebSocket 即時目標串流（WebSocket 失敗時自動 fallback 到 HTTP polling）
   const [wsTargets, setWsTargets] = useState<AirspaceTarget[]>([]);
@@ -116,6 +139,14 @@ export default function AirspaceView() {
     refetchInterval: 3000,
   });
   const activeUavMode = (uavModeData?.mode ?? 'orbit') as UavFlightMode;
+
+  // Current classifier mode
+  const { data: classifierData } = useQuery<{ classifier: string }>({
+    queryKey: ['classifierMode'],
+    queryFn: getClassifier,
+    refetchInterval: 3000,
+  });
+  const activeClassifier = (classifierData?.classifier ?? 'sra') as ClassifierMode;
 
   // Live replay: real Zenodo data + SRA inference
   const { data: liveData } = useQuery<LiveReplayResponse | null>({
@@ -193,6 +224,45 @@ export default function AirspaceView() {
           })}
         </div>
         <span className="text-[10px] text-slate-600 font-mono">UAV 飛行模式</span>
+      </div>
+
+      {/* Classifier Algorithm Selector */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-[10px] text-slate-500 font-mono mr-1 whitespace-nowrap">CLASSIFIER:</span>
+          {CLASSIFIER_OPTIONS.map((opt) => {
+            const isActive = activeClassifier === opt.value;
+            const colorMap: Record<string, string> = {
+              green: isActive
+                ? 'bg-green-900/50 border-green-500 text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.35)]'
+                : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-green-700 hover:text-green-400',
+              blue: isActive
+                ? 'bg-blue-900/50 border-blue-500 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.35)]'
+                : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-blue-700 hover:text-blue-400',
+              amber: isActive
+                ? 'bg-amber-900/50 border-amber-500 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
+                : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-amber-700 hover:text-amber-400',
+            };
+            return (
+              <button
+                key={opt.value}
+                onClick={() => handleClassifierChange(opt.value)}
+                disabled={classifierPending}
+                title={`${opt.desc}\nSpeed: ${opt.speed} | ${opt.accuracy}`}
+                className={`px-3 py-1.5 text-xs font-mono rounded-md border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${colorMap[opt.color]}`}
+              >
+                <span className="font-bold">{opt.label}</span>
+                <span className="ml-1.5 text-[9px] opacity-70">{opt.speed}</span>
+              </button>
+            );
+          })}
+          {activeClassifier === 'ensemble' && activeUavMode === 'swarm' && (
+            <span className="text-[9px] text-amber-400/70 font-mono ml-1 animate-pulse">AUTO</span>
+          )}
+        </div>
+        <span className="text-[10px] text-slate-600 font-mono">
+          分類演算法 — {CLASSIFIER_OPTIONS.find(o => o.value === activeClassifier)?.desc ?? ''}
+        </span>
       </div>
 
       {/* Stats bar */}

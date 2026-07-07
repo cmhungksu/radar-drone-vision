@@ -774,6 +774,16 @@ _track_sim = _TrackSimulator()
 _VALID_UAV_MODES = {"outbound", "inbound", "swarm", "orbit", "hover", "transit"}
 _current_uav_mode: str = "orbit"  # default: D1 orbit behaviour
 
+# ── Classifier mode state ────────────────────────────────────────────────────
+# sra      = SRA only (fastest, <0.1ms/sample, interpretable)
+# cnn      = CNN only (most accurate, ~5ms/sample, GPU)
+# ensemble = SRA fast screen → CNN confirm (balanced speed + accuracy)
+
+_VALID_CLASSIFIERS = {"sra", "cnn", "ensemble"}
+_current_classifier: str = "sra"  # default
+_cnn_model = None  # lazy-loaded Enhanced CNN
+_cnn_ready = False
+
 # ── Swarm bitmap patterns ─────────────────────────────────────────────────
 # Each pattern is a list of strings; '#' = UAV position, '.' = empty
 # Spacing between dots: ~8 meters
@@ -1146,28 +1156,167 @@ class _LiveDataInjector:
             logger.warning("LiveDataInjector load failed: %s", exc)
         return self._ready
 
+    def _ensure_cnn_loaded(self) -> bool:
+        """Lazy-load Enhanced CNN model for cnn/ensemble modes."""
+        global _cnn_model, _cnn_ready
+        if _cnn_ready:
+            return True
+        try:
+            import torch
+            model_path = Path(os.environ.get("MODELS_DIR", "models")) / "cnn_enhanced.pt"
+            if not model_path.exists():
+                logger.debug("CNN model not found at %s", model_path)
+                return False
+
+            # Import or define the model architecture
+            # Re-create the EnhancedRadarCNN inline (matches train_enhanced.py)
+            import torch.nn as nn
+
+            class _SE(nn.Module):
+                def __init__(self, ch, r=4):
+                    super().__init__()
+                    self.pool = nn.AdaptiveAvgPool2d(1)
+                    self.fc = nn.Sequential(nn.Linear(ch, ch//r, bias=False), nn.ReLU(True),
+                                            nn.Linear(ch//r, ch, bias=False), nn.Sigmoid())
+                def forward(self, x):
+                    b, c, _, _ = x.shape
+                    return x * self.fc(self.pool(x).view(b, c)).view(b, c, 1, 1)
+
+            class _Res(nn.Module):
+                def __init__(self, ic, oc, s=1):
+                    super().__init__()
+                    self.c1 = nn.Conv2d(ic, oc, 3, stride=s, padding=1, bias=False)
+                    self.b1 = nn.BatchNorm2d(oc)
+                    self.c2 = nn.Conv2d(oc, oc, 3, padding=1, bias=False)
+                    self.b2 = nn.BatchNorm2d(oc)
+                    self.se = _SE(oc)
+                    self.r = nn.ReLU(True)
+                    self.ds = (nn.Sequential(nn.Conv2d(ic, oc, 1, stride=s, bias=False),
+                               nn.BatchNorm2d(oc)) if s != 1 or ic != oc else None)
+                def forward(self, x):
+                    i = x
+                    o = self.r(self.b1(self.c1(x)))
+                    o = self.se(self.b2(self.c2(o)))
+                    if self.ds: i = self.ds(x)
+                    return self.r(o + i)
+
+            class _ECNN(nn.Module):
+                def __init__(self, ic, nc):
+                    super().__init__()
+                    self.stem = nn.Sequential(nn.Conv2d(ic, 32, 3, padding=1, bias=False),
+                                             nn.BatchNorm2d(32), nn.ReLU(True))
+                    self.layer1 = _Res(32, 64, 2)
+                    self.layer2 = _Res(64, 128, 2)
+                    self.layer3 = _Res(128, 256, 2)
+                    self.pool = nn.AdaptiveAvgPool2d((1, 1))
+                    self.classifier = nn.Sequential(nn.Flatten(), nn.Dropout(0.4),
+                                                    nn.Linear(256, 128), nn.ReLU(True),
+                                                    nn.Dropout(0.2), nn.Linear(128, nc))
+                def forward(self, x):
+                    return self.classifier(self.pool(self.layer3(self.layer2(self.layer1(self.stem(x))))))
+
+            device = "cpu"  # always CPU in the API worker for stability
+            state = torch.load(str(model_path), map_location=device, weights_only=True)
+            model = _ECNN(ic=2, nc=2)
+            model.load_state_dict(state["model_state_dict"])
+            model.eval()
+            _cnn_model = model
+            _cnn_ready = True
+            logger.info("Enhanced CNN loaded for live inference (%s)", model_path.name)
+            return True
+        except Exception as exc:
+            logger.warning("CNN load failed: %s", exc)
+            return False
+
+    def _run_cnn(self, signal: np.ndarray) -> float:
+        """Run CNN inference on one signal, return P(UAV) in [0, 1]."""
+        if not self._ensure_cnn_loaded():
+            return 0.5  # fallback: uncertain
+
+        import torch
+        from scipy.ndimage import zoom
+
+        # Feature extraction: complex image → 2-channel (real, imag)
+        from radar_drone_vision.signal.framing import frame_signal
+        from radar_drone_vision.signal.fft import compute_fft
+
+        frames = frame_signal(signal, frame_size=256, hop_size=128, window="hann")
+        spec = compute_fft(frames, n_fft=256, shift=True)
+        img = np.concatenate([spec.real, spec.imag], axis=-1)  # (T, 2*F)
+
+        # Split into 2 channels and resize to 128x128
+        h, w = img.shape
+        half_w = w // 2
+        ch_real = img[:, :half_w]
+        ch_imag = img[:, half_w:]
+        ch_real = zoom(ch_real, (128 / h, 128 / half_w), order=1)
+        ch_imag = zoom(ch_imag, (128 / h, 128 / half_w), order=1)
+        x = np.stack([ch_real, ch_imag], axis=0).astype(np.float32)  # (2, 128, 128)
+
+        with torch.no_grad():
+            tensor = torch.from_numpy(x).unsqueeze(0)  # (1, 2, 128, 128)
+            logits = _cnn_model(tensor)
+            probs = torch.softmax(logits, dim=1)
+            return float(probs[0, 1].item())  # P(UAV)
+
     # ── per-sample inference → target dict ──────────────────────────────────
 
     def _sample_to_target(self, idx: int) -> dict | None:
-        """Run SRA on one raw sample and return a target dict, or None on error."""
+        """Classify one raw sample using the currently selected algorithm."""
         try:
             from radar_drone_vision.signal.complex_log_fft import regularized_complex_log_fft
 
             ds = self._dataset
             sample = ds[idx]
-            feat = regularized_complex_log_fft(
+
+            t0 = time.time()
+            classifier = _current_classifier
+
+            # ── Feature extraction (shared by all methods) ──
+            feat_sra = regularized_complex_log_fft(
                 sample.signal.reshape(5, 256)
             ).flatten().reshape(1, -1)
 
-            ratio = float(self._model.score_ratio(feat)[0])
-            is_uav = ratio < 1.0
+            if classifier == "sra":
+                # SRA only: fast, <0.1ms
+                ratio = float(self._model.score_ratio(feat_sra)[0])
+                is_uav = ratio < 1.0
+                if is_uav:
+                    confidence = round(min(0.99, 1.0 / (1.0 + ratio)), 4)
+                else:
+                    confidence = round(min(0.99, ratio / (1.0 + ratio)), 4)
+                method_used = "sra"
 
-            # Confidence: lower ratio → higher UAV confidence, and vice-versa
-            if is_uav:
-                confidence = round(min(0.99, 1.0 / (1.0 + ratio)), 4)
-            else:
-                confidence = round(min(0.99, ratio / (1.0 + ratio)), 4)
+            elif classifier == "cnn":
+                # CNN only: most accurate, ~5ms
+                cnn_prob = self._run_cnn(sample.signal)
+                is_uav = cnn_prob > 0.5
+                confidence = round(float(cnn_prob if is_uav else 1.0 - cnn_prob), 4)
+                ratio = 0.0
+                method_used = "cnn"
 
+            else:  # ensemble
+                # Stage 1: SRA fast screen
+                ratio = float(self._model.score_ratio(feat_sra)[0])
+                sra_is_uav = ratio < 1.0
+                sra_conf = 1.0 / (1.0 + ratio) if sra_is_uav else ratio / (1.0 + ratio)
+
+                # Stage 2: if SRA is uncertain (confidence < 0.85), use CNN to confirm
+                if sra_conf < 0.85:
+                    cnn_prob = self._run_cnn(sample.signal)
+                    # Weighted ensemble: 30% SRA + 70% CNN
+                    sra_score = 1.0 / (1.0 + ratio)  # normalise to [0,1], higher=more UAV
+                    ens_score = 0.3 * sra_score + 0.7 * float(cnn_prob)
+                    is_uav = ens_score > 0.5
+                    confidence = round(min(0.99, ens_score if is_uav else 1.0 - ens_score), 4)
+                    method_used = "ensemble(sra+cnn)"
+                else:
+                    # SRA confident enough, skip CNN for speed
+                    is_uav = sra_is_uav
+                    confidence = round(min(0.99, sra_conf), 4)
+                    method_used = "ensemble(sra-only)"
+
+            latency_ms = round((time.time() - t0) * 1000, 2)
             classification = "UAV" if is_uav else "Bird"
 
             # Range from real metadata, or randomised if unavailable
@@ -1225,6 +1374,8 @@ class _LiveDataInjector:
                 # extras for debugging / live panel cross-reference
                 "_sra_ratio":       round(ratio, 6),
                 "_sample_index":    idx,
+                "_method":          method_used,
+                "_latency_ms":      latency_ms,
             }
         except Exception as exc:
             logger.debug("LiveDataInjector: sample %d failed: %s", idx, exc)
@@ -1322,6 +1473,7 @@ async def airspace_ws(websocket: WebSocket):
                     "other": len(all_targets) - uav_count - bird_count,
                 },
                 "uav_mode": _current_uav_mode,
+                "classifier": _current_classifier,
                 "timestamp": now,
             })
             await asyncio.sleep(0.8)
@@ -1551,12 +1703,55 @@ async def set_uav_mode(body: dict = {}):
             detail=f"Invalid mode {mode!r}. Must be one of: {sorted(_VALID_UAV_MODES)}",
         )
     try:
+        global _current_classifier
         _apply_uav_mode(mode)
+        # Auto-switch classifier to ensemble for swarm (many targets = speed critical)
+        if mode == "swarm" and _current_classifier != "ensemble":
+            _current_classifier = "ensemble"
+            logger.info("Auto-switched classifier to ensemble for swarm mode")
         logger.info("UAV flight mode changed to: %s", mode)
-        return {"mode": _current_uav_mode}
+        return {"mode": _current_uav_mode, "classifier": _current_classifier}
     except Exception as exc:
         logger.error("Failed to apply UAV mode %s: %s", mode, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# ── Classifier Mode ──────────────────────────────────────────────────────────
+
+@router.get("/airspace/classifier", tags=["airspace"])
+async def get_classifier():
+    """Return the current classification algorithm."""
+    return {
+        "classifier": _current_classifier,
+        "options": sorted(_VALID_CLASSIFIERS),
+        "descriptions": {
+            "sra": "SRA (Subspace Reliability Analysis) — <0.1ms, 可解釋, AUC 0.78",
+            "cnn": "Enhanced CNN (ResNet+SE) — ~5ms, 最高精度, AUC 0.9997",
+            "ensemble": "Ensemble (SRA 快篩 + CNN 確認) — 速度與精度兼顧",
+        },
+    }
+
+
+@router.post("/airspace/classifier", tags=["airspace"])
+async def set_classifier(body: dict = {}):
+    """Set the classification algorithm for live radar inference.
+
+    Accepted: sra | cnn | ensemble
+
+    - sra:      Fastest (<0.1ms), interpretable, lower accuracy
+    - cnn:      Most accurate (AUC 0.9997), ~5ms, GPU/CPU
+    - ensemble: SRA screens first, uncertain targets go to CNN (~1-5ms avg)
+    """
+    global _current_classifier
+    clf = body.get("classifier", "")
+    if clf not in _VALID_CLASSIFIERS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid classifier {clf!r}. Must be one of: {sorted(_VALID_CLASSIFIERS)}",
+        )
+    _current_classifier = clf
+    logger.info("Classifier changed to: %s", clf)
+    return {"classifier": _current_classifier}
 
 
 # ── ROC Comparison (pre-computed) ─────────────────────────────────────────────
