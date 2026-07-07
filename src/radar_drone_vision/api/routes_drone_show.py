@@ -211,6 +211,41 @@ async def get_plan(plan_id: str):
     }
 
 
+# ── Simulation ────────────────────────────────────────────────────────────────
+
+@router.post("/simulate/{plan_id}")
+async def simulate_plan(plan_id: str, body: dict = {}):
+    """Run full collision/speed simulation on a timeline plan.
+
+    Returns comprehensive risk report with inter-drone distances,
+    speed/acceleration checks, and warnings.
+    """
+    plan_path = PLANS_DIR / f"{plan_id}.json"
+    if not plan_path.exists():
+        raise HTTPException(404, f"Plan not found: {plan_id}")
+
+    from radar_drone_vision.drone_show.simulation import run_full_simulation
+
+    with open(plan_path) as f:
+        plan_data = json.load(f)
+
+    sample_rate = body.get("sample_rate", 10)
+    try:
+        report = run_full_simulation(plan_data, sample_rate=sample_rate)
+    except Exception as exc:
+        logger.error("Simulation failed: %s", exc)
+        raise HTTPException(500, f"Simulation failed: {exc}") from exc
+
+    # Save report
+    report_path = PLANS_DIR / f"{plan_id}_sim_report.json"
+    with open(report_path, "w") as f:
+        json.dump(report, f, indent=2)
+
+    logger.info("Simulation: %s → risk=%s, min_dist=%.2fm",
+                plan_id, report["risk_level"], report["inter_drone"]["min_distance"])
+    return report
+
+
 # ── Render (Blender) ─────────────────────────────────────────────────────────
 
 @router.post("/render/{plan_id}")
@@ -402,6 +437,183 @@ async def check_formation_obstacles(body: dict):
     registry = _get_registry(project_id)
     result = registry.check_formation(frame.points)
     return result
+
+
+# ── Replay Studio (Spec 2: Flight Log Reconstruction) ─────────────────────────
+
+@router.post("/replay/upload-log")
+async def upload_flight_log(file: UploadFile = File(...)):
+    """Upload a flight log (CSV/JSON) for reconstruction.
+
+    SIMULATION_ONLY — read-only parsing, no mission upload.
+    """
+    replay_dir = DATA_DIR / "drone_show" / "replay"
+    replay_dir.mkdir(parents=True, exist_ok=True)
+
+    log_id = f"log_{uuid.uuid4().hex[:8]}"
+    ext = Path(file.filename or "log.csv").suffix or ".csv"
+    save_path = replay_dir / f"{log_id}{ext}"
+
+    content = await file.read()
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    # Parse log
+    from radar_drone_vision.drone_show.replay.log_parser import parse_csv_log, detect_anomalies
+
+    try:
+        if ext in (".csv", ".tsv"):
+            flight_state = parse_csv_log(save_path)
+        else:
+            from radar_drone_vision.drone_show.replay.log_parser import parse_json_plan
+            flight_state = parse_json_plan(save_path)
+    except Exception as exc:
+        raise HTTPException(500, f"Log parsing failed: {exc}") from exc
+
+    # Save parsed state
+    state_path = replay_dir / f"{log_id}_state.json"
+    with open(state_path, "w") as f:
+        json.dump(flight_state, f)
+
+    # Detect anomalies
+    anomalies = detect_anomalies(flight_state)
+    anomaly_path = replay_dir / f"{log_id}_anomalies.json"
+    with open(anomaly_path, "w") as f:
+        json.dump(anomalies, f, indent=2)
+
+    return {
+        "log_id": log_id,
+        "drone_count": flight_state["drone_count"],
+        "total_frames": sum(len(d["frames"]) for d in flight_state["drones"]),
+        "anomaly_count": len(anomalies),
+        "anomalies_preview": anomalies[:10],
+        "safety": "SIMULATION_ONLY",
+    }
+
+
+@router.post("/replay/from-plan/{plan_id}")
+async def reconstruct_from_plan(plan_id: str):
+    """Reconstruct flight state from an existing timeline plan.
+
+    Converts plan → flight_state_series for replay/failure simulation.
+    """
+    plan_path = PLANS_DIR / f"{plan_id}.json"
+    if not plan_path.exists():
+        raise HTTPException(404, f"Plan not found: {plan_id}")
+
+    from radar_drone_vision.drone_show.replay.log_parser import parse_json_plan, detect_anomalies
+
+    flight_state = parse_json_plan(plan_path)
+
+    replay_dir = DATA_DIR / "drone_show" / "replay"
+    replay_dir.mkdir(parents=True, exist_ok=True)
+    log_id = f"plan_{plan_id}"
+    state_path = replay_dir / f"{log_id}_state.json"
+    with open(state_path, "w") as f:
+        json.dump(flight_state, f)
+
+    anomalies = detect_anomalies(flight_state)
+
+    return {
+        "log_id": log_id,
+        "drone_count": flight_state["drone_count"],
+        "total_frames": sum(len(d["frames"]) for d in flight_state["drones"]),
+        "anomaly_count": len(anomalies),
+        "safety": "SIMULATION_ONLY",
+    }
+
+
+@router.post("/replay/simulate-failure")
+async def simulate_failure(body: dict):
+    """Simulate a drone failure and plan visual replacement.
+
+    Body: { log_id, drone_id, failure_type, start_time, duration?,
+            candidate_pool?: [drone_ids] }
+
+    failure_type: GPS_DRIFT | IMU_ANOMALY | LOW_BATTERY | LED_BLACKOUT |
+                  COMM_LOST | DRONE_MISSING
+    """
+    log_id = body.get("log_id", "")
+    replay_dir = DATA_DIR / "drone_show" / "replay"
+    state_path = replay_dir / f"{log_id}_state.json"
+    if not state_path.exists():
+        raise HTTPException(404, f"Flight state not found: {log_id}")
+
+    with open(state_path) as f:
+        flight_state = json.load(f)
+
+    from radar_drone_vision.drone_show.replay.failure_sim import (
+        create_failure_scenario, apply_failure_to_state, plan_replacement
+    )
+
+    scenario = create_failure_scenario(
+        drone_id=body.get("drone_id", "D001"),
+        failure_type=body.get("failure_type", "LOW_BATTERY"),
+        start_time=body.get("start_time", 10.0),
+        duration=body.get("duration", 10.0),
+        candidate_pool=body.get("candidate_pool"),
+    )
+
+    # Apply failure
+    modified_state = apply_failure_to_state(flight_state, scenario)
+
+    # Plan replacement
+    replacement = plan_replacement(flight_state, scenario)
+
+    # Save modified state
+    fail_state_path = replay_dir / f"{log_id}_fail_{scenario['scenario_id']}.json"
+    with open(fail_state_path, "w") as f:
+        json.dump(modified_state, f)
+
+    logger.info("Failure simulation: %s → %s on %s at t=%.1f",
+                scenario["scenario_id"], body.get("failure_type"),
+                body.get("drone_id"), body.get("start_time"))
+
+    return {
+        "scenario": scenario,
+        "replacement": replacement,
+        "modified_drone_count": modified_state["drone_count"],
+        "safety": "SIMULATION_ONLY",
+    }
+
+
+@router.get("/replay/{log_id}/timeline")
+async def get_replay_timeline(log_id: str, drone_id: Optional[str] = Query(None)):
+    """Get the reconstructed timeline for replay visualization.
+
+    Optionally filter to a single drone.
+    """
+    replay_dir = DATA_DIR / "drone_show" / "replay"
+    state_path = replay_dir / f"{log_id}_state.json"
+    if not state_path.exists():
+        raise HTTPException(404, f"Flight state not found: {log_id}")
+
+    with open(state_path) as f:
+        flight_state = json.load(f)
+
+    if drone_id:
+        drones = [d for d in flight_state["drones"] if d["drone_id"] == drone_id]
+    else:
+        drones = flight_state["drones"]
+
+    # Downsample for frontend (max 50 frames per drone)
+    preview_drones = []
+    for d in drones:
+        frames = d["frames"]
+        step = max(1, len(frames) // 50)
+        preview_drones.append({
+            "drone_id": d["drone_id"],
+            "frame_count": len(frames),
+            "frames_preview": frames[::step][:50],
+            "time_range": [frames[0]["t"], frames[-1]["t"]] if frames else [0, 0],
+        })
+
+    return {
+        "log_id": log_id,
+        "drone_count": len(drones),
+        "drones": preview_drones,
+        "safety": "SIMULATION_ONLY",
+    }
 
 
 # ── Status / Info ────────────────────────────────────────────────────────────
