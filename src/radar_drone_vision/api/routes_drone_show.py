@@ -246,6 +246,92 @@ async def simulate_plan(plan_id: str, body: dict = {}):
     return report
 
 
+# ── Path Smoothing ────────────────────────────────────────────────────────────
+
+@router.post("/smooth-path")
+async def smooth_path_api(body: dict):
+    """Smooth a set of control points using Catmull-Rom → Bezier.
+
+    Body: { control_points: [[x,y,z],...], samples_per_segment?, arc_length_count? }
+    Returns smooth, C1-continuous path with optional arc-length reparameterization.
+    """
+    from radar_drone_vision.drone_show.smoothing import (
+        smooth_path_catmull_rom, arc_length_reparameterize, validate_path_smoothness
+    )
+
+    control_points = body.get("control_points", [])
+    if len(control_points) < 2:
+        raise HTTPException(400, "Need at least 2 control points")
+
+    samples = body.get("samples_per_segment", 20)
+    smoothed = smooth_path_catmull_rom(control_points, samples_per_segment=samples)
+
+    arc_count = body.get("arc_length_count")
+    if arc_count:
+        smoothed = arc_length_reparameterize(smoothed, target_count=arc_count)
+
+    validation = validate_path_smoothness(smoothed)
+
+    return {
+        "input_points": len(control_points),
+        "output_points": len(smoothed),
+        "path": smoothed,
+        "smoothness": validation,
+        "algorithm": "catmull_rom_centripetal_bezier",
+    }
+
+
+@router.post("/smooth-plan/{plan_id}")
+async def smooth_plan_paths(plan_id: str, body: dict = {}):
+    """Apply Catmull-Rom smoothing to all drone paths in a plan.
+
+    Returns smoothed path preview + smoothness validation for each drone.
+    """
+    plan_path = PLANS_DIR / f"{plan_id}.json"
+    if not plan_path.exists():
+        raise HTTPException(404, f"Plan not found: {plan_id}")
+
+    with open(plan_path) as f:
+        plan_data = json.load(f)
+
+    from radar_drone_vision.drone_show.smoothing import (
+        smooth_path_catmull_rom, validate_path_smoothness
+    )
+
+    samples = body.get("samples_per_segment", 15)
+    results = []
+    total_violations = 0
+
+    for drone in plan_data.get("drones", [])[:100]:  # cap for performance
+        all_cp = []
+        for seg in drone.get("segments", []):
+            all_cp.extend(seg.get("control_points", []))
+
+        if len(all_cp) < 2:
+            continue
+
+        smoothed = smooth_path_catmull_rom(all_cp, samples_per_segment=samples)
+        validation = validate_path_smoothness(smoothed)
+        total_violations += len(validation.get("violations", []))
+
+        results.append({
+            "drone_id": drone["drone_id"],
+            "original_points": len(all_cp),
+            "smoothed_points": len(smoothed),
+            "max_angle": validation["max_angle"],
+            "smooth": validation["smooth"],
+            "path_preview": smoothed[::max(1, len(smoothed) // 30)],  # downsample for frontend
+        })
+
+    return {
+        "plan_id": plan_id,
+        "drones_processed": len(results),
+        "total_violations": total_violations,
+        "all_smooth": total_violations == 0,
+        "drones": results[:20],  # cap response
+    }
+
+
 # ── Render (Blender) ─────────────────────────────────────────────────────────
 
 @router.post("/render/{plan_id}")
@@ -988,12 +1074,32 @@ async def drone_show_status():
     blender_bin = os.environ.get("BLENDER_BIN", "blender")
     blender_ok = shutil.which(blender_bin) is not None
 
+    from radar_drone_vision.drone_show.isaac_connector.connector import get_connector
+    isaac = get_connector().get_status()
+
     return {
         "module": "drone-show-studio",
-        "version": "1.0.0-mvp",
+        "version": "1.2.0",
         "simulation_only": True,
         "assets_count": len(assets),
         "plans_count": len(plans),
         "renders_count": len(renders),
         "blender_available": blender_ok,
+        "isaac_sim": isaac,
+        "features": {
+            "image_to_points": True,
+            "led_rgb565_rgb888": True,
+            "formation_planning": True,
+            "multi_frame_storyboard": True,
+            "obstacle_system": True,
+            "collision_simulation": True,
+            "catmull_rom_smoothing": True,
+            "scene_dsl_compiler": True,
+            "flight_log_replay": True,
+            "failure_simulation": True,
+            "carrier_bay_management": True,
+            "launch_recovery_scheduling": True,
+            "2d_3d_animation": True,
+            "max_drone_count": 10000,
+        },
     }
