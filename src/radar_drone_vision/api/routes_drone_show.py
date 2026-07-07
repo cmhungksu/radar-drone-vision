@@ -280,6 +280,59 @@ async def download_render_file(render_id: str, filename: str):
     return FileResponse(file_path, filename=filename)
 
 
+# ── Multi-Frame Storyboard ────────────────────────────────────────────────────
+
+@router.post("/storyboard/plan")
+async def plan_storyboard(body: dict):
+    """Create a multi-frame timeline plan from multiple formation frames.
+
+    Body: { frame_ids: [str], hold_duration?, transition_duration?, ... }
+    Sequence: takeoff → frame[0] → transition → frame[1] → ... → landing
+    """
+    frame_ids = body.get("frame_ids", [])
+    if not frame_ids:
+        raise HTTPException(400, "frame_ids is required (list of frame_id strings)")
+
+    from radar_drone_vision.drone_show.schemas import FormationFrame
+    from radar_drone_vision.drone_show.storyboard import create_multi_frame_timeline
+
+    frames = []
+    for fid in frame_ids:
+        frame_path = PLANS_DIR / f"{fid}.json"
+        if not frame_path.exists():
+            raise HTTPException(404, f"Frame not found: {fid}")
+        with open(frame_path) as f:
+            frames.append(FormationFrame(**json.load(f)))
+
+    try:
+        plan, risk = create_multi_frame_timeline(
+            frames,
+            takeoff_duration=body.get("takeoff_duration", 8.0),
+            hold_duration=body.get("hold_duration", 6.0),
+            transition_duration=body.get("transition_duration", 5.0),
+            landing_duration=body.get("landing_duration", 8.0),
+        )
+    except Exception as exc:
+        raise HTTPException(500, f"Storyboard planning failed: {exc}") from exc
+
+    # Save plan
+    plan_path = PLANS_DIR / f"{plan.plan_id}.json"
+    with open(plan_path, "w") as f:
+        json.dump(plan.model_dump(), f)
+
+    logger.info("Multi-frame plan: %s (%d frames, %d drones, %.1fs)",
+                plan.plan_id, len(frames), plan.drone_count, plan.total_duration_sec)
+
+    return {
+        "plan_id": plan.plan_id,
+        "drone_count": plan.drone_count,
+        "total_duration_sec": plan.total_duration_sec,
+        "frame_count": len(frames),
+        "frames": plan.frames,
+        "risk": risk,
+    }
+
+
 # ── Obstacles ─────────────────────────────────────────────────────────────────
 
 # In-memory obstacle registry (per-session; production would use DB)

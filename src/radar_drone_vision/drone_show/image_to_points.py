@@ -118,6 +118,8 @@ def sample_points_by_count(
     scale: float = 1.0,
 ) -> List[FormationPoint]:
     """Sample exactly drone_count points, weighted by importance."""
+    h, w = bgr_image.shape[:2]
+    max_dim = max(h, w)
     n_available = len(contour_points)
 
     if n_available <= drone_count:
@@ -157,8 +159,6 @@ def sample_points_by_count(
     for i in range(min(len(selected_idx), drone_count)):
         contour_points[selected_idx[i]] = selected_pts[i]
 
-    h, w = bgr_image.shape[:2]
-    max_dim = max(h, w)
     half_span = 50.0 * scale  # ±50m default
 
     points = []
