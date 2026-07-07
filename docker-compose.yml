@@ -1,10 +1,46 @@
 services:
-  api:
+  odoo:
+    image: odoo:18
+    ports:
+      - "46069:8069"
+      - "46072:8072"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons
+      - ./configs/odoo.conf:/etc/odoo/odoo.conf:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - HOST=db
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "46432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_DB=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  ai-worker:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.worker
     ports:
-      - "8000:8000"
+      - "46090:8000"
     volumes:
       - ./data:/app/data
       - ./models:/app/models
@@ -15,34 +51,28 @@ services:
       - MODELS_DIR=/app/models
       - REPORTS_DIR=/app/reports
       - DEVICE=cpu
-    command: uvicorn radar_drone_vision.api.main:app --host 0.0.0.0 --port 8000 --reload
+      - OLLAMA_HOST=http://10.88.0.1:11434
+    command: uvicorn radar_drone_vision.api.main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
+    mem_limit: 10g
+    memswap_limit: 12g
+    deploy:
+      resources:
+        limits:
+          memory: 10G
+        reservations:
+          memory: 2G
 
   web:
     build:
       context: ./web
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "46173:80"
     depends_on:
-      - api
-    environment:
-      - VITE_API_URL=http://localhost:8000
+      - ai-worker
     restart: unless-stopped
 
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./data:/app/data
-      - ./models:/app/models
-      - ./reports:/app/reports
-      - ./configs:/app/configs
-    environment:
-      - DATA_DIR=/app/data
-      - MODELS_DIR=/app/models
-      - REPORTS_DIR=/app/reports
-      - DEVICE=cpu
-    command: python -c "print('Worker ready. Use docker compose exec worker python scripts/<script>.py')"
-    restart: "no"
+volumes:
+  odoo-data:
+  pg-data:

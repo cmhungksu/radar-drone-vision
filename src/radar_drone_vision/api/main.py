@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from radar_drone_vision.api.routes_airspace import router as airspace_router
 from radar_drone_vision.api.routes_dataset import router as dataset_router
 from radar_drone_vision.api.routes_hardware import router as hardware_router
 from radar_drone_vision.api.routes_inference import router as inference_router
@@ -35,6 +36,7 @@ app.add_middleware(
 )
 
 # Register routers
+app.include_router(airspace_router)
 app.include_router(dataset_router)
 app.include_router(inference_router)
 app.include_router(hardware_router)

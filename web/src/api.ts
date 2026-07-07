@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: '/radar-viz/api',
   timeout: 30000,
 });
 
@@ -95,9 +95,16 @@ export interface AirspaceTarget {
   range_m: number;
   azimuth_deg: number;
   velocity_mps: number;
+  heading_deg?: number;
   classification: string;
   confidence: number;
   rcs_dbsm: number | null;
+  trail?: { range_m: number; azimuth_deg: number }[];
+  micro_doppler_hz?: number;
+  flock_id?: string | null;
+  label?: string;
+  altitude_m?: number;
+  elevation_deg?: number;
   timestamp: string;
 }
 
@@ -111,7 +118,16 @@ export interface FeatureDimResult {
 
 export async function getDatasets(): Promise<DatasetStatus[]> {
   const { data } = await client.get('/datasets');
-  return data;
+  // Map backend field names to frontend interface
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((d: any) => ({
+    name: d.name ?? '',
+    downloaded: Number(d.num_samples ?? d.sample_count ?? 0) > 0,
+    sample_count: Number(d.num_samples ?? d.sample_count ?? 0),
+    class_distribution: d.classes ?? d.class_distribution ?? {},
+    path: d.path ?? '',
+    size_mb: d.size_mb ?? 0,
+  }));
 }
 
 export async function getSamples(
@@ -132,10 +148,12 @@ export async function getSample(sampleId: string): Promise<Sample> {
 }
 
 export async function getSampleSpectrogram(sampleId: string): Promise<string> {
-  const { data } = await client.get(`/samples/${sampleId}/spectrogram`, {
-    responseType: 'text',
-  });
-  return data; // base64 or data URL
+  const { data } = await client.get(`/samples/${sampleId}/spectrogram`);
+  // Backend returns JSON with a "data" field containing base64
+  if (typeof data === 'object' && data.data) {
+    return `data:image/png;base64,${data.data}`;
+  }
+  return data; // fallback: raw string
 }
 
 export async function getSampleRangeDoppler(sampleId: string): Promise<string> {
@@ -218,6 +236,60 @@ export async function getAirspaceTargets(): Promise<AirspaceTarget[]> {
   } catch {
     return [];
   }
+}
+
+// ─── Live Replay (real inference) ────────────────────────────────────────────
+
+export interface LiveReplaySample {
+  sample_index: number;
+  sample_id: string;
+  true_label: string;
+  true_is_uav: boolean;
+  predicted: string;
+  predicted_correct: boolean;
+  confidence: number;
+  sra_ratio: number;
+  range_m: number;
+  time_s: number;
+  spectrogram_b64: string;
+  timestamp: string;
+}
+
+export interface LiveReplayResponse {
+  samples: LiveReplaySample[];
+  stats: { total: number; correct: number; accuracy: number; cursor: number; dataset_size: number };
+}
+
+export async function getLiveReplay(count: number = 6): Promise<LiveReplayResponse | null> {
+  try {
+    const { data } = await client.get('/airspace/live-replay', { params: { count } });
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getLiveStats(): Promise<{ total: number; correct: number; accuracy: number } | null> {
+  try {
+    const { data } = await client.get('/airspace/live-stats');
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// ─── UAV Flight Mode ─────────────────────────────────────────────────────────
+
+export type UavFlightMode = 'outbound' | 'inbound' | 'swarm' | 'orbit' | 'hover' | 'transit';
+
+export async function setUavMode(mode: UavFlightMode): Promise<{ mode: string }> {
+  const { data } = await client.post('/airspace/uav-mode', { mode });
+  return data;
+}
+
+export async function getUavMode(): Promise<{ mode: string }> {
+  const { data } = await client.get('/airspace/uav-mode');
+  return data;
 }
 
 // ─── Hardware ────────────────────────────────────────────────────────────────

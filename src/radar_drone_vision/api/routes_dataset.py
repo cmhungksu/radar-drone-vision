@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 
 from radar_drone_vision.api.schemas import (
@@ -13,6 +16,8 @@ from radar_drone_vision.api.schemas import (
 )
 
 router = APIRouter(tags=["datasets"])
+
+DATA_DIR = Path(os.environ.get("DATA_DIR", "data"))
 
 
 # In-memory registry of loaded datasets (populated by prepare endpoint)
@@ -51,19 +56,18 @@ async def prepare_dataset(req: DatasetPrepareRequest):
         if req.dataset == "zenodo77":
             from radar_drone_vision.datasets.zenodo77 import Zenodo77Dataset  # noqa: F811
 
-            ds = Zenodo77Dataset()
-            samples = ds.load()
-            classes: dict[str, int] = {}
-            for s in samples:
-                classes[s.label] = classes.get(s.label, 0) + 1
+            ds = Zenodo77Dataset(data_dir=DATA_DIR / "raw" / "zenodo_77ghz")
+            classes = ds.class_distribution()
+            n_samples = len(ds)
+            signal_shape = list(ds[0].signal.shape) if n_samples > 0 else []
 
             _datasets["zenodo77"] = {
-                "num_samples": len(samples),
+                "num_samples": n_samples,
                 "classes": classes,
                 "splits": {},
-                "signal_shape": list(samples[0].signal.shape) if samples else [],
+                "signal_shape": signal_shape,
             }
-            return DatasetPrepareResponse(dataset=req.dataset, status="ready", message=f"{len(samples)} samples loaded")
+            return DatasetPrepareResponse(dataset=req.dataset, status="ready", message=f"{n_samples} samples loaded")
         else:
             raise HTTPException(status_code=404, detail=f"Unknown dataset: {req.dataset}")
     except HTTPException:

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- 模組類別 -->
+        <record id="module_category_radar" model="ir.module.category">
+            <field name="name">雷達 AI 平台</field>
+            <field name="sequence">100</field>
+        </record>
+
+        <!-- 使用者群組 -->
+        <record id="group_radar_user" model="res.groups">
+            <field name="name">使用者</field>
+            <field name="category_id" ref="module_category_radar"/>
+        </record>
+
+        <!-- 管理者群組 -->
+        <record id="group_radar_manager" model="res.groups">
+            <field name="name">管理者</field>
+            <field name="category_id" ref="module_category_radar"/>
+            <field name="implied_ids" eval="[(4, ref('group_radar_user'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

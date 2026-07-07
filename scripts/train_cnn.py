@@ -59,17 +59,17 @@ def load_dataset(dataset_name: str, project_root: Path):
     if dataset_name in ("zenodo77", "zenodo_77ghz_fmcw"):
         from radar_drone_vision.datasets.zenodo77 import Zenodo77Dataset
 
-        data_dir = project_root / "data" / "processed" / "zenodo_77ghz_fmcw"
-        if not data_dir.exists():
-            data_dir = project_root / "data" / "raw" / "zenodo_77ghz_fmcw"
-        if not data_dir.exists():
-            print(
-                f"\n[ERROR] Dataset directory not found: {data_dir}\n"
-                "  Please download the dataset first:\n"
-                "    python scripts/download_zenodo.py --out data/raw/zenodo_77ghz_fmcw\n"
-            )
-            sys.exit(1)
-        return Zenodo77Dataset(data_dir)
+        for subdir in ["zenodo_77ghz", "zenodo77", "zenodo_77ghz_fmcw"]:
+            for prefix in ["raw", "processed"]:
+                candidate = project_root / "data" / prefix / subdir
+                npy_file = candidate / "data_SAAB_SIRS_77GHz_FMCW.npy"
+                if npy_file.exists():
+                    return Zenodo77Dataset(candidate)
+        print(
+            "\n[ERROR] Dataset directory not found.\n"
+            "  Please download: python scripts/download_zenodo.py --out data/raw/zenodo_77ghz\n"
+        )
+        sys.exit(1)
     else:
         print(f"\n[ERROR] Unknown dataset: '{dataset_name}'")
         sys.exit(1)

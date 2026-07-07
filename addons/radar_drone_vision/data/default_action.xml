@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- AI Worker URL 系統參數 -->
+        <record id="config_ai_worker_url" model="ir.config_parameter">
+            <field name="key">radar.ai_worker_url</field>
+            <field name="value">http://ai-worker:8000</field>
+        </record>
+
+        <!-- 推論編號序號 -->
+        <record id="seq_inference" model="ir.sequence">
+            <field name="name">推論編號</field>
+            <field name="code">radar.inference</field>
+            <field name="prefix">RDR-INF-</field>
+            <field name="padding">5</field>
+        </record>
+
+        <!-- 預設 Zenodo 77GHz 資料集 -->
+        <record id="dataset_zenodo77" model="radar.dataset">
+            <field name="name">Zenodo 77GHz FMCW</field>
+            <field name="dataset_type">zenodo77</field>
+            <field name="doi">10.5281/zenodo.5845259</field>
+            <field name="carrier_freq_hz">77000000000</field>
+            <field name="radar_type">FMCW</field>
+            <field name="notes">77 GHz FMCW radar, classes: birds, humans, six different drones. ~75868 samples.</field>
+        </record>
+
+        <!-- 預設模擬器硬體裝置 -->
+        <record id="hardware_simulator" model="radar.hardware">
+            <field name="name">IQ 模擬器</field>
+            <field name="device_type">simulator</field>
+            <field name="host">localhost</field>
+            <field name="port">5555</field>
+        </record>
+
+        <!-- 登出跳轉設定 -->
+        <record id="config_logout_redirect" model="ir.config_parameter">
+            <field name="key">auth_signup.logout_redirect_url</field>
+            <field name="value">/</field>
+        </record>
+    </data>
+</odoo>

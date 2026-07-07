@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_radar_dataset_tree" model="ir.ui.view">
+        <field name="name">radar.dataset.tree</field>
+        <field name="model">radar.dataset</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="dataset_type"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'ready'"
+                       decoration-info="state in ('downloading','processing')"
+                       decoration-warning="state == 'downloaded'"
+                       decoration-danger="state == 'error'"/>
+                <field name="num_samples"/>
+                <field name="num_uav"/>
+                <field name="num_non_uav"/>
+                <field name="radar_type"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_radar_dataset_form" model="ir.ui.view">
+        <field name="name">radar.dataset.form</field>
+        <field name="model">radar.dataset</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_download" string="下載資料集" type="object"
+                            class="btn-primary"
+                            invisible="state not in ('draft',)"/>
+                    <button name="action_prepare" string="準備資料集" type="object"
+                            class="btn-primary"
+                            invisible="state not in ('downloaded',)"/>
+                    <button name="action_refresh_stats" string="重新整理統計" type="object"
+                            invisible="state not in ('ready',)"/>
+                    <button name="action_reset_draft" string="重設為草稿" type="object"
+                            invisible="state not in ('error',)"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,downloaded,ready"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="資料集名稱"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="基本資訊">
+                            <field name="dataset_type"/>
+                            <field name="radar_type"/>
+                            <field name="carrier_freq_hz"/>
+                            <field name="doi"/>
+                        </group>
+                        <group string="統計資訊">
+                            <field name="num_samples"/>
+                            <field name="num_uav"/>
+                            <field name="num_non_uav"/>
+                            <field name="download_progress" widget="progressbar"
+                                   invisible="state not in ('downloading',)"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="備註">
+                            <field name="notes" placeholder="備註資訊..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_dataset_list" model="ir.actions.act_window">
+        <field name="name">資料集</field>
+        <field name="res_model">radar.dataset</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                建立第一個雷達資料集
+            </p>
+            <p>管理雷達訊號資料集，支援 Zenodo 77GHz FMCW 資料集下載與前處理。</p>
+        </field>
+    </record>
+</odoo>

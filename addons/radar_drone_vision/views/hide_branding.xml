@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 隱藏 Odoo 品牌 -->
+    <template id="hide_odoo_branding" inherit_id="web.layout" name="隱藏 Odoo 品牌">
+        <xpath expr="//head" position="inside">
+            <style>
+                /* 隱藏 navbar 品牌 icon */
+                .o_main_navbar .o_menu_brand_icon {
+                    display: none !important;
+                }
+                /* 隱藏登入頁 footer */
+                .oe_login_footer {
+                    display: none !important;
+                }
+                /* 隱藏所有 odoo.com 連結 */
+                a[href*="odoo.com"] {
+                    display: none !important;
+                }
+                /* 隱藏 "Powered by Odoo" */
+                .o_powered_by_odoo,
+                .o_brand_promotion {
+                    display: none !important;
+                }
+            </style>
+        </xpath>
+    </template>
+</odoo>

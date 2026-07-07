@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Landing Page Template -->
+    <template id="landing_page" name="雷達無人機視覺辨識平台首頁">
+        <t t-call="website.layout">
+            <t t-set="no_header" t-value="True"/>
+            <t t-set="no_footer" t-value="True"/>
+            <div id="wrap" class="radar-landing">
+                <style>
+                    .radar-landing {
+                        font-family: 'Noto Sans TC', sans-serif;
+                        color: #e2e8f0;
+                        background: #0f172a;
+                    }
+                    .radar-hero {
+                        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f172a 100%);
+                        padding: 100px 0 80px;
+                        text-align: center;
+                    }
+                    .radar-hero h1 {
+                        font-size: 3rem;
+                        font-weight: 700;
+                        color: #ffffff;
+                        margin-bottom: 20px;
+                    }
+                    .radar-hero .highlight { color: #4ade80; }
+                    .radar-hero p {
+                        font-size: 1.3rem;
+                        color: #94a3b8;
+                        max-width: 700px;
+                        margin: 0 auto 30px;
+                    }
+                    .btn-radar {
+                        background: linear-gradient(135deg, #16a34a, #22c55e);
+                        color: #fff;
+                        border: none;
+                        padding: 14px 40px;
+                        font-size: 1.1rem;
+                        border-radius: 8px;
+                        text-decoration: none;
+                        display: inline-block;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    }
+                    .btn-radar:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4);
+                        color: #fff;
+                    }
+                    .section-dark { background: #0f172a; padding: 60px 0; }
+                    .section-darker { background: #0b1120; padding: 60px 0; }
+                    .section-title {
+                        text-align: center;
+                        font-size: 2rem;
+                        font-weight: 700;
+                        color: #fff;
+                        margin-bottom: 40px;
+                    }
+                    .section-title .accent { color: #4ade80; }
+                    .pain-card, .feature-card, .step-card {
+                        background: #1e293b;
+                        border-radius: 12px;
+                        padding: 30px;
+                        margin-bottom: 20px;
+                        border: 1px solid #334155;
+                        transition: transform 0.2s, border-color 0.2s;
+                    }
+                    .pain-card:hover, .feature-card:hover, .step-card:hover {
+                        transform: translateY(-4px);
+                        border-color: #4ade80;
+                    }
+                    .pain-card .icon, .feature-card .icon {
+                        font-size: 2.5rem;
+                        margin-bottom: 15px;
+                    }
+                    .pain-card h4, .feature-card h4 { color: #fff; margin-bottom: 10px; }
+                    .pain-card p, .feature-card p { color: #94a3b8; font-size: 0.95rem; }
+                    .step-card .step-num {
+                        width: 50px; height: 50px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #16a34a, #22c55e);
+                        color: #fff;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 1.5rem; font-weight: 700;
+                        margin-bottom: 15px;
+                    }
+                    .stat-card { text-align: center; padding: 30px; }
+                    .stat-card .number { font-size: 3rem; font-weight: 700; color: #4ade80; }
+                    .stat-card .label { color: #94a3b8; font-size: 1rem; }
+                    .tech-tag {
+                        display: inline-block;
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        border-radius: 20px;
+                        padding: 8px 18px;
+                        margin: 5px;
+                        color: #4ade80;
+                        font-size: 0.9rem;
+                    }
+                    .cta-section {
+                        background: linear-gradient(135deg, #0f172a, #1e3a2f);
+                        padding: 80px 0;
+                        text-align: center;
+                    }
+                    .radar-footer {
+                        background: #070d1a;
+                        padding: 40px 0 20px;
+                        border-top: 1px solid #1e293b;
+                    }
+                    .radar-footer a { color: #4ade80; text-decoration: none; }
+                    .radar-footer a:hover { color: #86efac; }
+                    .radar-footer .footer-info { color: #64748b; font-size: 0.9rem; }
+                </style>
+
+                <!-- Hero -->
+                <section class="radar-hero" data-snippet="s_radar_hero">
+                    <div class="container">
+                        <h1><t t-out="'雷達'"/><span class="highlight"><t t-out="'無人機'"/></span><t t-out="'視覺辨識平台'"/></h1>
+                        <p>低空小目標 micro-Doppler 訊號 AI 辨識系統，精準區分 UAV 與鳥類，守護空域安全</p>
+                        <a href="/web/login" class="btn-radar">登入系統</a>
+                    </div>
+                </section>
+
+                <!-- 痛點 -->
+                <section class="section-darker" data-snippet="s_radar_pain">
+                    <div class="container">
+                        <h2 class="section-title">低空偵測的<span class="accent">核心挑戰</span></h2>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="pain-card">
+                                    <div class="icon">&#x1F4E1;</div>
+                                    <h4>雷達回波微弱</h4>
+                                    <p>小型 UAV 的雷達截面積 (RCS) 極小，與鳥類高度重疊，傳統雷達難以區分。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="pain-card">
+                                    <div class="icon">&#x1F426;</div>
+                                    <h4>鳥類干擾嚴重</h4>
+                                    <p>鳥群飛行模式與小型無人機相似，造成高誤警率，浪費防禦資源。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="pain-card">
+                                    <div class="icon">&#x26A0;</div>
+                                    <h4>即時性要求高</h4>
+                                    <p>低空入侵威脅反應時間極短，必須在毫秒級完成辨識與決策。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="pain-card">
+                                    <div class="icon">&#x1F4CA;</div>
+                                    <h4>缺乏標準工具</h4>
+                                    <p>目前缺少整合式 AI 驗證平台，研究人員難以快速對比不同演算法效能。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 流程 -->
+                <section class="section-dark" data-snippet="s_radar_flow">
+                    <div class="container">
+                        <h2 class="section-title">五步完成<span class="accent">辨識驗證</span></h2>
+                        <div class="row">
+                            <div class="col-md-2 offset-md-1">
+                                <div class="step-card text-center">
+                                    <div class="step-num mx-auto">1</div>
+                                    <h5 style="color:#fff;">匯入資料</h5>
+                                    <p style="color:#94a3b8;font-size:0.85rem;">下載 Zenodo 77GHz 資料集或匯入自訂資料</p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="step-card text-center">
+                                    <div class="step-num mx-auto">2</div>
+                                    <h5 style="color:#fff;">特徵擷取</h5>
+                                    <p style="color:#94a3b8;font-size:0.85rem;">Complex-Log-FFT、頻譜圖、倒頻譜等多種特徵</p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="step-card text-center">
+                                    <div class="step-num mx-auto">3</div>
+                                    <h5 style="color:#fff;">模型訓練</h5>
+                                    <p style="color:#94a3b8;font-size:0.85rem;">SRA 論文演算法或 CNN/CRNN 深度學習</p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="step-card text-center">
+                                    <div class="step-num mx-auto">4</div>
+                                    <h5 style="color:#fff;">效能評估</h5>
+                                    <p style="color:#94a3b8;font-size:0.85rem;">準確率、EER、ROC/DET 曲線完整分析</p>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="step-card text-center">
+                                    <div class="step-num mx-auto">5</div>
+                                    <h5 style="color:#fff;">即時推論</h5>
+                                    <p style="color:#94a3b8;font-size:0.85rem;">連接雷達硬體或模擬器，即時辨識空中目標</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 功能 -->
+                <section class="section-darker" data-snippet="s_radar_features">
+                    <div class="container">
+                        <h2 class="section-title">平台<span class="accent">核心功能</span></h2>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F4C2;</div>
+                                    <h4>資料集管理</h4>
+                                    <p>一鍵下載 Zenodo 77GHz FMCW 資料集，支援合成資料與自訂格式匯入。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F9EA;</div>
+                                    <h4>SRA 論文演算法</h4>
+                                    <p>實作論文提出的 Subspace-based Regularized Algorithm，可重現論文結果。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F916;</div>
+                                    <h4>深度學習模型</h4>
+                                    <p>CNN、CRNN、Transformer 多種架構，PyTorch 實作，GPU 加速訓練。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F4C8;</div>
+                                    <h4>完整效能評估</h4>
+                                    <p>Accuracy、EER、FAR/FRR、ROC、DET 曲線，混淆矩陣視覺化。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x26A1;</div>
+                                    <h4>即時推論引擎</h4>
+                                    <p>毫秒級推論延遲，支援批次推論與即時串流辨識。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F4E1;</div>
+                                    <h4>雷達硬體整合</h4>
+                                    <p>支援 TI mmWave、Infineon 雷達模組，內建 IQ 模擬器供開發測試。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F30D;</div>
+                                    <h4>micro-Doppler 分析</h4>
+                                    <p>頻譜圖、倒頻譜、CVD 等多種 micro-Doppler 特徵視覺化。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F50D;</div>
+                                    <h4>實驗對比分析</h4>
+                                    <p>多實驗並行對比，快速找出最佳演算法與參數組合。</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="feature-card">
+                                    <div class="icon">&#x1F4CA;</div>
+                                    <h4>戰情室儀表板</h4>
+                                    <p>即時監控系統狀態、訓練進度、推論統計，一目了然。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 數據統計 -->
+                <section class="section-dark" data-snippet="s_radar_stats">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="number">77 GHz</div>
+                                    <div class="label">FMCW 雷達頻率</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="number">75K+</div>
+                                    <div class="label">訓練樣本數</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="number">&lt;5ms</div>
+                                    <div class="label">推論延遲</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="number">99%+</div>
+                                    <div class="label">辨識準確率</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 技術架構 -->
+                <section class="section-darker" data-snippet="s_radar_tech">
+                    <div class="container text-center">
+                        <h2 class="section-title">技術<span class="accent">架構</span></h2>
+                        <div>
+                            <span class="tech-tag">Python 3.12</span>
+                            <span class="tech-tag">PyTorch</span>
+                            <span class="tech-tag">FastAPI</span>
+                            <span class="tech-tag">Odoo 18</span>
+                            <span class="tech-tag">NumPy / SciPy</span>
+                            <span class="tech-tag">scikit-learn</span>
+                            <span class="tech-tag">Docker</span>
+                            <span class="tech-tag">NVIDIA CUDA</span>
+                            <span class="tech-tag">77GHz FMCW</span>
+                            <span class="tech-tag">micro-Doppler</span>
+                            <span class="tech-tag">TI mmWave</span>
+                            <span class="tech-tag">PostgreSQL</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 即時雷達展示 -->
+                <section class="section-dark" data-snippet="s_radar_live" style="padding:60px 0;">
+                    <div class="container">
+                        <h2 class="section-title">即時<span class="accent">雷達空域掃描</span></h2>
+                        <p style="text-align:center;color:#94a3b8;margin-bottom:30px;">模擬 77GHz FMCW 雷達掃描畫面 — UAV（紅色）與鳥類（藍色）即時辨識追蹤</p>
+                        <div style="display:flex;justify-content:center;">
+                            <iframe
+                                src="/radar-viz/airspace"
+                                style="width:100%;max-width:1100px;height:700px;border:1px solid #334155;border-radius:12px;background:#0b0f19;"
+                                frameborder="0"
+                                loading="lazy"
+                                title="雷達空域掃描"
+                            />
+                        </div>
+                        <div style="text-align:center;margin-top:20px;">
+                            <a href="/radar-viz/" class="btn-radar" style="background:linear-gradient(135deg,#0f766e,#14b8a6);font-size:0.95rem;padding:10px 25px;">
+                                開啟完整視覺化分析面板
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CTA -->
+                <section class="cta-section" data-snippet="s_radar_cta">
+                    <div class="container text-center">
+                        <h2 style="color:#fff;font-size:2.2rem;margin-bottom:20px;">開始使用雷達 AI 辨識平台</h2>
+                        <p style="color:#94a3b8;font-size:1.1rem;margin-bottom:30px;">立即登入，體驗完整的 micro-Doppler UAV/鳥類辨識驗證流程</p>
+                        <a href="/web/login" class="btn-radar">登入系統</a>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <footer class="radar-footer" data-snippet="s_radar_footer">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h5 style="color:#fff;margin-bottom:15px;">酷冷科技 CoolCold Tech</h5>
+                                <p class="footer-info">
+                                    71005 台南市永康區南台街 1 號<br/>
+                                    （崑山科技大學）
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 style="color:#fff;margin-bottom:15px;">聯絡資訊</h5>
+                                <p class="footer-info">
+                                    Email: chun.min.hung@gmail.com<br/>
+                                    網站: <a href="https://www.coolcold.com.tw">www.coolcold.com.tw</a>
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 style="color:#fff;margin-bottom:15px;">快速連結</h5>
+                                <p class="footer-info">
+                                    <a href="/web/login">登入系統</a><br/>
+                                    <a href="https://www.coolcold.com.tw">CoolCold 官網</a>
+                                </p>
+                            </div>
+                        </div>
+                        <hr style="border-color:#1e293b;margin:30px 0 15px;"/>
+                        <p class="text-center footer-info" style="margin:0;">
+                            &#169; 2026 CoolCold Tech. All rights reserved.
+                        </p>
+                    </div>
+                </footer>
+            </div>
+        </t>
+    </template>
+
+    <!-- Website Page Record -->
+    <record id="landing_page_page" model="website.page">
+        <field name="name">首頁</field>
+        <field name="url">/radar-home</field>
+        <field name="view_id" ref="landing_page"/>
+        <field name="is_published">True</field>
+        <field name="website_indexed">True</field>
+    </record>
+</odoo>

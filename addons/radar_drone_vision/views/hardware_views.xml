@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_radar_hardware_tree" model="ir.ui.view">
+        <field name="name">radar.hardware.tree</field>
+        <field name="model">radar.hardware</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="device_type"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'connected'"
+                       decoration-muted="state == 'disconnected'"
+                       decoration-danger="state == 'error'"/>
+                <field name="host"/>
+                <field name="port"/>
+                <field name="frames_received"/>
+                <field name="latency_ms"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_radar_hardware_form" model="ir.ui.view">
+        <field name="name">radar.hardware.form</field>
+        <field name="model">radar.hardware</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_connect" string="連線" type="object"
+                            class="btn-primary"
+                            invisible="state == 'connected'"/>
+                    <button name="action_disconnect" string="斷線" type="object"
+                            class="btn-danger"
+                            invisible="state != 'connected'"/>
+                    <button name="action_refresh_status" string="重新整理狀態" type="object"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="disconnected,connected"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="裝置設定">
+                            <field name="device_type"/>
+                            <field name="host"/>
+                            <field name="port"/>
+                        </group>
+                        <group string="狀態資訊">
+                            <field name="frames_received"/>
+                            <field name="latency_ms"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_hardware_list" model="ir.actions.act_window">
+        <field name="name">硬體裝置</field>
+        <field name="res_model">radar.hardware</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                新增雷達硬體裝置
+            </p>
+            <p>支援 TI mmWave、Infineon、Generic I/Q 及模擬器。</p>
+        </field>
+    </record>
+</odoo>

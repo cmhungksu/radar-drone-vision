@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 根選單 -->
+    <menuitem id="menu_radar_root"
+              name="雷達 AI 平台"
+              web_icon="radar_drone_vision,static/description/icon.png"
+              sequence="10"/>
+
+    <!-- 戰情室 -->
+    <menuitem id="menu_dashboard"
+              name="戰情室"
+              parent="menu_radar_root"
+              action="action_dashboard"
+              sequence="1"/>
+
+    <!-- 🎯 即時空域監控（戰情中心） -->
+    <record id="action_airspace_monitor" model="ir.actions.act_url">
+        <field name="name">即時空域監控</field>
+        <field name="url">/radar-viz/airspace</field>
+        <field name="target">self</field>
+    </record>
+    <menuitem id="menu_airspace_monitor"
+              name="🎯 即時空域監控"
+              parent="menu_radar_root"
+              action="action_airspace_monitor"
+              sequence="2"/>
+
+    <!-- 📊 視覺化分析面板 -->
+    <record id="action_viz_dashboard" model="ir.actions.act_url">
+        <field name="name">視覺化分析面板</field>
+        <field name="url">/radar-viz/</field>
+        <field name="target">self</field>
+    </record>
+    <menuitem id="menu_viz_dashboard"
+              name="📊 視覺化分析"
+              parent="menu_radar_root"
+              action="action_viz_dashboard"
+              sequence="3"/>
+
+    <!-- 📈 模型評估圖表 -->
+    <record id="action_model_eval" model="ir.actions.act_url">
+        <field name="name">模型評估圖表</field>
+        <field name="url">/radar-viz/evaluation</field>
+        <field name="target">self</field>
+    </record>
+    <menuitem id="menu_model_eval"
+              name="📈 模型評估圖表"
+              parent="menu_radar_root"
+              action="action_model_eval"
+              sequence="4"/>
+
+    <!-- 資料集管理 -->
+    <menuitem id="menu_datasets"
+              name="資料集管理"
+              parent="menu_radar_root"
+              sequence="10"/>
+    <menuitem id="menu_datasets_list"
+              name="資料集"
+              parent="menu_datasets"
+              action="action_dataset_list"
+              sequence="1"/>
+
+    <!-- 訓練實驗 -->
+    <menuitem id="menu_experiments"
+              name="訓練實驗"
+              parent="menu_radar_root"
+              sequence="20"/>
+    <menuitem id="menu_experiment_list"
+              name="實驗列表"
+              parent="menu_experiments"
+              action="action_experiment_list"
+              sequence="1"/>
+    <menuitem id="menu_experiment_new_sra"
+              name="新增 SRA 訓練"
+              parent="menu_experiments"
+              action="action_experiment_new_sra"
+              sequence="2"/>
+    <menuitem id="menu_experiment_new_cnn"
+              name="新增 CNN 訓練"
+              parent="menu_experiments"
+              action="action_experiment_new_cnn"
+              sequence="3"/>
+
+    <!-- 模型管理 -->
+    <menuitem id="menu_models"
+              name="模型管理"
+              parent="menu_radar_root"
+              sequence="30"/>
+    <menuitem id="menu_model_list"
+              name="已訓練模型"
+              parent="menu_models"
+              action="action_model_list"
+              sequence="1"/>
+
+    <!-- 推論 -->
+    <menuitem id="menu_inference"
+              name="推論"
+              parent="menu_radar_root"
+              sequence="40"/>
+    <menuitem id="menu_inference_list"
+              name="推論紀錄"
+              parent="menu_inference"
+              action="action_inference_list"
+              sequence="1"/>
+    <menuitem id="menu_inference_new"
+              name="新增推論"
+              parent="menu_inference"
+              action="action_inference_new"
+              sequence="2"/>
+
+    <!-- 硬體管理 -->
+    <menuitem id="menu_hardware"
+              name="硬體管理"
+              parent="menu_radar_root"
+              sequence="50"/>
+    <menuitem id="menu_hardware_list"
+              name="裝置列表"
+              parent="menu_hardware"
+              action="action_hardware_list"
+              sequence="1"/>
+</odoo>

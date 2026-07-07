@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 美化登入頁面 -->
+    <template id="login_page_custom" inherit_id="web.login" name="雷達平台美化登入頁">
+        <xpath expr="//t[@t-call='web.login_layout']" position="before">
+            <style>
+                body {
+                    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f172a 100%) !important;
+                    min-height: 100vh;
+                }
+                .o_login_form, .oe_login_form {
+                    background: #1e293b !important;
+                    border: 1px solid #334155 !important;
+                    border-radius: 16px !important;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+                    padding: 40px !important;
+                    max-width: 420px !important;
+                    margin: 0 auto !important;
+                }
+                .o_login_form input[type="text"],
+                .o_login_form input[type="password"],
+                .o_login_form input[type="email"],
+                .oe_login_form input[type="text"],
+                .oe_login_form input[type="password"],
+                .oe_login_form input[type="email"] {
+                    background: #0f172a !important;
+                    border: 1px solid #334155 !important;
+                    color: #e2e8f0 !important;
+                    border-radius: 8px !important;
+                    padding: 12px 15px !important;
+                }
+                .o_login_form input:focus,
+                .oe_login_form input:focus {
+                    border-color: #22c55e !important;
+                    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2) !important;
+                }
+                .o_login_form label,
+                .oe_login_form label {
+                    color: #94a3b8 !important;
+                    font-weight: 500 !important;
+                }
+                .btn-primary {
+                    background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+                    border: none !important;
+                    border-radius: 8px !important;
+                    padding: 12px !important;
+                    font-weight: 600 !important;
+                }
+                .btn-primary:hover {
+                    transform: translateY(-1px) !important;
+                    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
+                }
+                a { color: #4ade80 !important; }
+                a:hover { color: #86efac !important; }
+                .oe_login_footer, a[href*="odoo.com"],
+                .o_footer, footer.o_footer { display: none !important; }
+                .card { background: transparent !important; border: none !important; }
+            </style>
+        </xpath>
+    </template>
+
+    <!-- 登入頁品牌注入 -->
+    <template id="login_brand_inject" inherit_id="web.login_layout" name="登入頁品牌注入">
+        <xpath expr="//div[hasclass('card-body')]" position="before">
+            <div class="text-center mb-4">
+                <h3 style="color: #4ade80; font-weight: 700; margin-bottom: 5px;">
+                    雷達無人機視覺辨識平台
+                </h3>
+                <p style="color: #94a3b8; font-size: 0.9rem;">micro-Doppler AI 辨識系統</p>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('card-body')]" position="after">
+            <div class="text-center mt-3">
+                <a href="/" style="color: #4ade80; text-decoration: none; font-size: 0.9rem;">
+                    &#8592; 返回首頁
+                </a>
+            </div>
+        </xpath>
+    </template>
+</odoo>

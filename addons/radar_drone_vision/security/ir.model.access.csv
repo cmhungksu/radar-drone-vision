@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_radar_dataset_user,radar.dataset.user,model_radar_dataset,group_radar_user,1,0,0,0
+access_radar_dataset_manager,radar.dataset.manager,model_radar_dataset,group_radar_manager,1,1,1,1
+access_radar_experiment_user,radar.experiment.user,model_radar_experiment,group_radar_user,1,0,0,0
+access_radar_experiment_manager,radar.experiment.manager,model_radar_experiment,group_radar_manager,1,1,1,1
+access_radar_model_user,radar.model.user,model_radar_model,group_radar_user,1,0,0,0
+access_radar_model_manager,radar.model.manager,model_radar_model,group_radar_manager,1,1,1,1
+access_radar_inference_user,radar.inference.user,model_radar_inference,group_radar_user,1,0,0,0
+access_radar_inference_manager,radar.inference.manager,model_radar_inference,group_radar_manager,1,1,1,1
+access_radar_hardware_user,radar.hardware.user,model_radar_hardware,group_radar_user,1,0,0,0
+access_radar_hardware_manager,radar.hardware.manager,model_radar_hardware,group_radar_manager,1,1,1,1

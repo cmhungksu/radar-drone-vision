@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_radar_experiment_tree" model="ir.ui.view">
+        <field name="name">radar.experiment.tree</field>
+        <field name="model">radar.experiment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="model_type"/>
+                <field name="dataset_id"/>
+                <field name="feature_type"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'trained'"
+                       decoration-info="state == 'training'"
+                       decoration-danger="state == 'error'"/>
+                <field name="accuracy" widget="float" digits="[6,4]"/>
+                <field name="eer" widget="float" digits="[6,4]"/>
+                <field name="f1_score" widget="float" digits="[6,4]"/>
+                <field name="duration_seconds"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_radar_experiment_form" model="ir.ui.view">
+        <field name="name">radar.experiment.form</field>
+        <field name="model">radar.experiment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_train" string="開始訓練" type="object"
+                            class="btn-primary"
+                            invisible="state not in ('draft',)"/>
+                    <button name="action_evaluate" string="評估模型" type="object"
+                            invisible="state not in ('trained',)"/>
+                    <button name="action_reset_draft" string="重設為草稿" type="object"
+                            invisible="state not in ('error','trained')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,training,trained"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="實驗名稱"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="實驗設定">
+                            <field name="model_type"/>
+                            <field name="dataset_id"/>
+                            <field name="feature_type"/>
+                        </group>
+                        <group string="關聯">
+                            <field name="trained_model_id" readonly="1"/>
+                            <field name="duration_seconds" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <!-- SRA 參數 -->
+                        <page string="SRA 參數"
+                              invisible="model_type != 'sra'">
+                            <group>
+                                <field name="sra_m_uav"/>
+                                <field name="sra_m_non_uav"/>
+                                <field name="sra_repeat"/>
+                            </group>
+                        </page>
+                        <!-- CNN 參數 -->
+                        <page string="CNN / 深度學習參數"
+                              invisible="model_type == 'sra'">
+                            <group>
+                                <field name="cnn_epochs"/>
+                                <field name="cnn_batch_size"/>
+                                <field name="cnn_lr"/>
+                            </group>
+                        </page>
+                        <!-- 結果 -->
+                        <page string="訓練結果"
+                              invisible="state not in ('trained',)">
+                            <group>
+                                <group string="效能指標">
+                                    <field name="accuracy"/>
+                                    <field name="precision_val"/>
+                                    <field name="recall_val"/>
+                                    <field name="f1_score"/>
+                                </group>
+                                <group string="安全指標">
+                                    <field name="eer"/>
+                                    <field name="far_at_frr1"/>
+                                    <field name="auc"/>
+                                </group>
+                            </group>
+                            <group string="模型資訊">
+                                <field name="model_path"/>
+                            </group>
+                        </page>
+                        <!-- 圖表 -->
+                        <page string="圖表"
+                              invisible="state not in ('trained',)">
+                            <group>
+                                <group string="混淆矩陣">
+                                    <field name="confusion_matrix_img" widget="image"
+                                           class="oe_avatar"/>
+                                </group>
+                                <group string="ROC 曲線">
+                                    <field name="roc_curve_img" widget="image"
+                                           class="oe_avatar"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="DET 曲線">
+                                    <field name="det_curve_img" widget="image"
+                                           class="oe_avatar"/>
+                                </group>
+                            </group>
+                        </page>
+                        <!-- 訓練日誌 -->
+                        <page string="訓練日誌">
+                            <field name="training_log" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action: 實驗列表 -->
+    <record id="action_experiment_list" model="ir.actions.act_window">
+        <field name="name">訓練實驗</field>
+        <field name="res_model">radar.experiment</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                建立第一個訓練實驗
+            </p>
+            <p>選擇 SRA 或 CNN 模型進行訓練，比較不同特徵與參數組合的效能。</p>
+        </field>
+    </record>
+
+    <!-- Action: 新增 SRA 訓練 -->
+    <record id="action_experiment_new_sra" model="ir.actions.act_window">
+        <field name="name">新增 SRA 訓練</field>
+        <field name="res_model">radar.experiment</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'default_model_type': 'sra'}</field>
+    </record>
+
+    <!-- Action: 新增 CNN 訓練 -->
+    <record id="action_experiment_new_cnn" model="ir.actions.act_window">
+        <field name="name">新增 CNN 訓練</field>
+        <field name="res_model">radar.experiment</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'default_model_type': 'cnn'}</field>
+    </record>
+</odoo>
