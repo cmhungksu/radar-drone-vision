@@ -40,3 +40,7 @@ pyserial>=3.5
 pytest>=7.4
 pytest-cov>=4.1
 pytest-asyncio>=0.21
+
+# Drone Show Studio
+opencv-python-headless>=4.8
+scikit-image>=0.21
