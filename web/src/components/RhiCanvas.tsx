@@ -253,11 +253,15 @@ export default function RhiCanvas({
       ctx.fillText('GND', PAD_LEFT + 2, groundY - 3);
 
       // ── Sweep trail (gradient, drawn before targets) ─────────────────────────
+      // Use the same sweep line position for the trail
+      const trailBaseX = alignWithPpi
+        ? cartesianXToCanvasX(maxRange * Math.sin(sweepAzimuth * Math.PI / 180), maxRange)
+        : PAD_LEFT + sweepFrac * PLOT_W;
       const TRAIL_PX = 80; // pixels of fading trail behind sweep line
       const trailSteps = 40;
       for (let i = 0; i < trailSteps; i++) {
         const frac = i / trailSteps;
-        const trailX = sweepX - TRAIL_PX * frac;
+        const trailX = trailBaseX - TRAIL_PX * frac;
         if (trailX < PAD_LEFT) continue;
         const alpha = 0.18 * (1 - frac) * (1 - frac);
         ctx.beginPath();
@@ -268,8 +272,14 @@ export default function RhiCanvas({
         ctx.stroke();
       }
 
-      // ── Targets (always visible — RHI shows all targets for altitude reference) ──
+      // ── Targets (synced with PPI: only visible after sweep, with phosphor fade) ──
       for (const t of tgts) {
+        const st = sweepStateRef.current.get(t.track_id);
+        const timeSinceSweep = st ? now - st.lastSweepTime : Infinity;
+
+        // Skip targets that haven't been swept or have fully faded
+        if (!st || timeSinceSweep >= FADE_DURATION_MS) continue;
+
         const altitude = t.altitude_m ?? 0;
         // X-axis: use Cartesian x (aligned with PPI left/right) or range_m
         const cx = alignWithPpi
@@ -280,19 +290,43 @@ export default function RhiCanvas({
         const dotRadius = rcsToRadius(t.rcs_dbsm ?? null);
         const [cr, cg, cb] = targetColor(t);
 
-        // Sweep flash effect (visual only, targets are always visible)
-        const st = sweepStateRef.current.get(t.track_id);
-        const timeSinceSweep = st ? now - st.lastSweepTime : Infinity;
+        // Phosphor fade logic matching PPI behavior
         const isFlashing = timeSinceSweep < FLASH_DURATION_MS;
-        const baseAlpha = 0.5 + 0.4 * t.confidence;
-        const mainAlpha = isFlashing ? 1.0 : baseAlpha;
+        let mainAlpha: number;
+        let mainColor: [number, number, number];
+        let glowRadius: number;
+        let glowAlpha: number;
+        let showLabel = false;
+
+        if (isFlashing) {
+          // Bright classification color flash
+          const flashFrac = timeSinceSweep / FLASH_DURATION_MS;
+          mainAlpha = 0.9 + 0.1 * (1 - flashFrac) * t.confidence;
+          mainColor = [cr, cg, cb];
+          glowRadius = dotRadius * 3;
+          glowAlpha = 0.5 * (1 - flashFrac);
+          showLabel = true;
+        } else {
+          // Phosphor fade: blend from classification color → phosphor green
+          const fadeFrac = (timeSinceSweep - FLASH_DURATION_MS) / (FADE_DURATION_MS - FLASH_DURATION_MS);
+          const t01 = Math.min(1, fadeFrac);
+          mainColor = [
+            Math.round(cr + (PHOSPHOR[0] - cr) * t01),
+            Math.round(cg + (PHOSPHOR[1] - cg) * t01),
+            Math.round(cb + (PHOSPHOR[2] - cb) * t01),
+          ];
+          mainAlpha = 0.8 * (1 - t01 * 0.94);
+          glowRadius = dotRadius * 1.5;
+          glowAlpha = mainAlpha * 0.15;
+          showLabel = timeSinceSweep < 1000;
+        }
+
+        if (mainAlpha < 0.02) continue;
 
         // Glow halo
-        const glowRadius = isFlashing ? dotRadius * 3 : dotRadius * 1.5;
-        const glowAlpha = isFlashing ? 0.5 : baseAlpha * 0.15;
         const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
-        gradient.addColorStop(0, `rgba(${cr},${cg},${cb}, ${glowAlpha})`);
-        gradient.addColorStop(1, `rgba(${cr},${cg},${cb}, 0)`);
+        gradient.addColorStop(0, `rgba(${mainColor[0]},${mainColor[1]},${mainColor[2]}, ${glowAlpha})`);
+        gradient.addColorStop(1, `rgba(${mainColor[0]},${mainColor[1]},${mainColor[2]}, 0)`);
         ctx.beginPath();
         ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2);
         ctx.fillStyle = gradient;
@@ -301,28 +335,36 @@ export default function RhiCanvas({
         // Main dot
         ctx.beginPath();
         ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${cr},${cg},${cb}, ${mainAlpha})`;
-        ctx.shadowColor = `rgb(${cr},${cg},${cb})`;
+        ctx.fillStyle = `rgba(${mainColor[0]},${mainColor[1]},${mainColor[2]}, ${mainAlpha})`;
+        ctx.shadowColor = `rgb(${mainColor[0]},${mainColor[1]},${mainColor[2]})`;
         ctx.shadowBlur = isFlashing ? 10 : 3;
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Label
-        const label = t.label ?? t.track_id;
-        const altStr = typeof altitude === 'number' ? ` ${Math.round(altitude)}m` : '';
-        ctx.font = 'bold 7px monospace';
-        ctx.fillStyle = `rgba(${cr},${cg},${cb}, ${mainAlpha * 0.7})`;
-        ctx.textAlign = 'left';
-        const lx = Math.min(cx + dotRadius + 3, PAD_LEFT + PLOT_W - 60);
-        const ly = Math.max(cy - dotRadius - 6, PAD_TOP + 8);
-        ctx.fillText(`${label.toUpperCase()}${altStr}`, lx, ly);
+        // Label (only when recently swept)
+        if (showLabel) {
+          const label = t.label ?? t.track_id;
+          const altStr = typeof altitude === 'number' ? ` ${Math.round(altitude)}m` : '';
+          const labelAlpha = isFlashing ? mainAlpha : Math.max(0, 1 - (timeSinceSweep - FLASH_DURATION_MS) / (1000 - FLASH_DURATION_MS));
+          ctx.font = 'bold 7px monospace';
+          ctx.fillStyle = `rgba(${mainColor[0]},${mainColor[1]},${mainColor[2]}, ${labelAlpha * 0.7})`;
+          ctx.textAlign = 'left';
+          const lx = Math.min(cx + dotRadius + 3, PAD_LEFT + PLOT_W - 60);
+          const ly = Math.max(cy - dotRadius - 6, PAD_TOP + 8);
+          ctx.fillText(`${label.toUpperCase()}${altStr}`, lx, ly);
+        }
       }
 
-      // ── Main sweep line (vertical, bright green) ──────────────────────────────
-      if (sweepX >= PAD_LEFT && sweepX <= PAD_LEFT + PLOT_W) {
+      // ── Main sweep line (vertical, positioned by azimuth for PPI sync) ──────────
+      // In PPI-aligned mode, the sweep line represents the current azimuth
+      // mapped to the X-axis position for visual consistency
+      const sweepLineX = alignWithPpi
+        ? cartesianXToCanvasX(maxRange * Math.sin(sweepAzimuth * Math.PI / 180), maxRange)
+        : PAD_LEFT + sweepFrac * PLOT_W;
+      if (sweepLineX >= PAD_LEFT && sweepLineX <= PAD_LEFT + PLOT_W) {
         ctx.beginPath();
-        ctx.moveTo(sweepX, PAD_TOP);
-        ctx.lineTo(sweepX, PAD_TOP + PLOT_H);
+        ctx.moveTo(sweepLineX, PAD_TOP);
+        ctx.lineTo(sweepLineX, PAD_TOP + PLOT_H);
         ctx.strokeStyle = 'rgba(34, 197, 94, 0.92)';
         ctx.lineWidth = 2;
         ctx.shadowColor = '#22c55e';
