@@ -21,6 +21,25 @@ interface PlanPreview {
   drone_preview: { drone_id: string; ground: number[]; target: number[]; color: number[] }[];
 }
 
+interface SimReport {
+  risk_level: string;
+  inter_drone: { min_distance: number; close_approach_count: number };
+  speed_summary: { max_speed: number; max_acceleration: number; total_violations: number };
+  warnings: string[];
+}
+
+interface Obstacle {
+  obstacle_id: string; name: string; type: string;
+  center: number[]; size: number[]; z_min: number; z_max: number;
+}
+
+const OBS_PRESETS = [
+  { name: '大型氣球 (左)', type: 'balloon', canvas_x: 0.2, canvas_y: 0.3, canvas_w: 0.12, canvas_h: 0.12, z_min: 40, z_max: 80, safety_buffer: 8 },
+  { name: '高空建築 (右)', type: 'building', canvas_x: 0.8, canvas_y: 0.5, canvas_w: 0.08, canvas_h: 0.15, z_min: 0, z_max: 60, safety_buffer: 5 },
+  { name: '舞台塔架 (中)', type: 'building', canvas_x: 0.5, canvas_y: 0.85, canvas_w: 0.06, canvas_h: 0.06, z_min: 0, z_max: 25, safety_buffer: 3 },
+  { name: '禁飛區 (上方)', type: 'no_fly', canvas_x: 0.5, canvas_y: 0.1, canvas_w: 0.3, canvas_h: 0.08, z_min: 70, z_max: 120, safety_buffer: 10 },
+];
+
 export default function DroneShowStudio() {
   const [assetId, setAssetId] = useState<string | null>(null);
   const [thumbnail, setThumbnail] = useState<string | null>(null);
@@ -31,6 +50,8 @@ export default function DroneShowStudio() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [plan, setPlan] = useState<PlanPreview | null>(null);
   const [renderImages, setRenderImages] = useState<string[]>([]);
+  const [simReport, setSimReport] = useState<SimReport | null>(null);
+  const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [loading, setLoading] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -124,6 +145,41 @@ export default function DroneShowStudio() {
     } catch (err) {
       console.error('Render failed:', err);
     }
+    setLoading('');
+  }, [plan]);
+
+  // Add obstacle preset
+  const handleAddObstacle = useCallback(async (preset: typeof OBS_PRESETS[0]) => {
+    try {
+      const res = await fetch(`${API_BASE}/obstacles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preset),
+      });
+      const obs = await res.json();
+      setObstacles(prev => [...prev, obs]);
+    } catch (err) { console.error(err); }
+  }, []);
+
+  // Remove obstacle
+  const handleRemoveObstacle = useCallback(async (id: string) => {
+    try {
+      await fetch(`${API_BASE}/obstacles/${id}`, { method: 'DELETE' });
+      setObstacles(prev => prev.filter(o => o.obstacle_id !== id));
+    } catch (err) { console.error(err); }
+  }, []);
+
+  // Run simulation
+  const handleSimulate = useCallback(async () => {
+    if (!plan) return;
+    setLoading('simulating');
+    try {
+      const res = await fetch(`${API_BASE}/simulate/${plan.plan_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      setSimReport(await res.json());
+    } catch (err) { console.error(err); }
     setLoading('');
   }, [plan]);
 
@@ -372,6 +428,114 @@ export default function DroneShowStudio() {
           </div>
         </div>
       )}
+
+      {/* ═══ Obstacles ═══ */}
+      <div className="card">
+        <h3 className="card-header">
+          Canvas 禁飛區 / 障礙物
+          <span className="text-slate-500 font-normal text-xs ml-2">畫出不可穿越的 3D 體積</span>
+        </h3>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {OBS_PRESETS.map((preset, i) => (
+            <button key={i} onClick={() => handleAddObstacle(preset)}
+              className="px-3 py-1.5 text-xs rounded-md border border-slate-700 bg-slate-800/50 text-slate-400 hover:border-amber-600 hover:text-amber-400 transition-all">
+              + {preset.name}
+            </button>
+          ))}
+        </div>
+        {obstacles.length > 0 && (
+          <div className="space-y-1">
+            {obstacles.map(obs => (
+              <div key={obs.obstacle_id} className="flex items-center justify-between px-3 py-2 rounded bg-slate-800/50 border border-slate-700/50">
+                <div className="flex items-center gap-3">
+                  <span className={`w-3 h-3 rounded ${obs.type === 'sphere_volume' ? 'bg-amber-500' : obs.type === 'cylinder_volume' ? 'bg-red-500' : 'bg-blue-500'}`} />
+                  <span className="text-sm text-slate-300">{obs.name}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">{obs.type}</span>
+                  <span className="text-[10px] text-slate-500">z: {obs.z_min}-{obs.z_max}m</span>
+                </div>
+                <button onClick={() => handleRemoveObstacle(obs.obstacle_id)}
+                  className="text-xs text-red-400 hover:text-red-300 px-2">Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {obstacles.length === 0 && (
+          <p className="text-xs text-slate-500">尚未新增障礙物。點擊上方按鈕新增預設障礙，或使用 API 自定義。</p>
+        )}
+      </div>
+
+      {/* ═══ Simulation ═══ */}
+      {plan && (
+        <div className="card">
+          <h3 className="card-header">
+            碰撞 / 速度模擬
+            <span className="text-slate-500 font-normal text-xs ml-2">高頻取樣路徑檢查</span>
+          </h3>
+          <button onClick={handleSimulate} disabled={loading === 'simulating'}
+            className="px-6 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-500 disabled:opacity-40 transition-all mb-4">
+            {loading === 'simulating' ? 'Running Simulation...' : 'Run Full Simulation'}
+          </button>
+
+          {simReport && (
+            <div className="space-y-4">
+              {/* Risk level badge */}
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${
+                  simReport.risk_level === 'critical' ? 'bg-red-900/50 text-red-400 border border-red-600' :
+                  simReport.risk_level === 'high' ? 'bg-amber-900/50 text-amber-400 border border-amber-600' :
+                  simReport.risk_level === 'moderate' ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-600' :
+                  'bg-green-900/50 text-green-400 border border-green-600'
+                }`}>{simReport.risk_level} RISK</span>
+                <span className="text-xs text-slate-500">SIMULATION_ONLY</span>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-center">
+                  <p className="text-[10px] text-slate-500">Min Distance</p>
+                  <p className={`text-lg font-bold ${simReport.inter_drone.min_distance < 2 ? 'text-red-400' : simReport.inter_drone.min_distance < 3 ? 'text-amber-400' : 'text-green-400'}`}>
+                    {simReport.inter_drone.min_distance.toFixed(2)}m
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-center">
+                  <p className="text-[10px] text-slate-500">Close Approaches</p>
+                  <p className={`text-lg font-bold ${simReport.inter_drone.close_approach_count > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+                    {simReport.inter_drone.close_approach_count}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-center">
+                  <p className="text-[10px] text-slate-500">Max Speed</p>
+                  <p className={`text-lg font-bold ${simReport.speed_summary.max_speed > 15 ? 'text-red-400' : 'text-green-400'}`}>
+                    {simReport.speed_summary.max_speed.toFixed(1)} m/s
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-800/50 border border-slate-700/50 p-3 text-center">
+                  <p className="text-[10px] text-slate-500">Speed Violations</p>
+                  <p className={`text-lg font-bold ${simReport.speed_summary.total_violations > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {simReport.speed_summary.total_violations}
+                  </p>
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {simReport.warnings.length > 0 && (
+                <div className="space-y-1">
+                  {simReport.warnings.map((w, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs px-3 py-1.5 rounded bg-red-900/10 border border-red-800/20">
+                      <span className="text-red-400 mt-0.5">&#9888;</span>
+                      <span className="text-slate-300">{w}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="text-[10px] text-slate-600 text-center font-mono">
+        SIMULATION_ONLY — 所有輸出僅供動畫與可行性模擬，不輸出實機飛控指令
+      </div>
     </div>
   );
 }
