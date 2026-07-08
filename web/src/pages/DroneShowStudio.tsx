@@ -99,10 +99,14 @@ export default function DroneShowStudio() {
       setFrameId(null);
       setPlan(null);
       setRenderImages([]);
+      setSimReport(null);
+      setDslResult(null);
     } catch (err) {
       console.error('Upload failed:', err);
     }
     setLoading('');
+    // Reset file input so the same file can be re-selected
+    if (fileRef.current) fileRef.current.value = '';
   }, []);
 
   // Generate points
@@ -369,7 +373,7 @@ export default function DroneShowStudio() {
           <h3 className="card-header">1. 上傳素材</h3>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload}
             className="hidden" />
-          <button onClick={() => fileRef.current?.click()}
+          <button onClick={() => { if (fileRef.current) { fileRef.current.value = ''; fileRef.current.click(); } }}
             className="w-full py-8 border-2 border-dashed border-slate-700 rounded-lg text-slate-400 hover:border-green-600 hover:text-green-400 transition-all text-sm"
             disabled={loading === 'uploading'}>
             {loading === 'uploading' ? 'Uploading...' : thumbnail ? 'Change Image' : 'Click to Upload PNG/JPG/SVG'}
