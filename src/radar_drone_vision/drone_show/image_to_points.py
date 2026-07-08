@@ -175,6 +175,16 @@ def sample_points_by_count(
         b, g, r = bgr_image[cy, cx]
         color = nearest_palette_color(int(r), int(g), int(b), palette)
 
+        # Skip near-black background pixels (invisible in dark sky)
+        brightness = int(r) + int(g) + int(b)
+        if brightness < 40:
+            # Replace with a visible color from the palette (skip dark ones)
+            bright_colors = [c for c in palette if sum(c) > 80]
+            if bright_colors:
+                color = bright_colors[i % len(bright_colors)]
+            else:
+                color = [0, 100, 255]  # fallback blue
+
         imp = float(importance[idx]) if idx < len(importance) else 0.5
         points.append(FormationPoint(
             point_id=f"P{i:04d}",

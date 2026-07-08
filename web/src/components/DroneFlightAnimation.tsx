@@ -155,11 +155,23 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
     }
 
+    // ── Wave-based batch launch parameters ──
+    const BATCH_SIZE = 4;  // drones per wave (carrier launch slots)
+    const nWaves = Math.ceil(drones.length / BATCH_SIZE);
+    // Each wave gets a staggered delay within the takeoff phase
+    const waveInterval = takeoffPhase * 0.6 / Math.max(nWaves, 1); // 60% of takeoff for stagger
+    const perDroneFlightTime = takeoffPhase * 0.4; // 40% of takeoff for actual flight per drone
+
     // Draw each drone
-    for (const d of drones) {
+    for (let di = 0; di < drones.length; di++) {
+      const d = drones[di];
       const gx = d.ground[0], gy = d.ground[1];
       const tx = d.target[0], ty = d.target[1];
       const [r, g, b] = d.color;
+
+      // Wave assignment: which batch this drone belongs to
+      const waveIdx = Math.floor(di / BATCH_SIZE);
+      const launchDelay = waveIdx * waveInterval; // staggered launch time (as phase fraction)
 
       // Smooth Bezier interpolation with high precision
       const controlPts = [
@@ -186,33 +198,61 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
         ctx.stroke();
       }
 
-      // Current position based on phase
+      // Current position based on phase WITH staggered launch
       let px: number, py: number;
+      let visible = true;
 
-      if (phase < takeoffPhase) {
-        // Takeoff: ground → target via smooth path
-        const f = phase / takeoffPhase;
+      if (phase < launchDelay) {
+        // Not yet launched: stay on ground, dim
+        px = gx; py = gy;
+        visible = false; // still in carrier bay
+      } else if (phase < launchDelay + perDroneFlightTime) {
+        // This drone is currently flying up (its personal takeoff window)
+        const f = (phase - launchDelay) / perDroneFlightTime;
         const idx = Math.min(Math.floor(f * (smoothPts.length - 1)), smoothPts.length - 1);
         [px, py] = [smoothPts[idx][0], smoothPts[idx][1]];
       } else if (phase < holdEnd) {
-        // Hold at target
+        // Arrived at target, holding
         px = tx; py = ty;
       } else if (phase < landingStart) {
-        // Hold at target (if single frame)
+        // Still holding
         px = tx; py = ty;
       } else {
-        // Landing: target → ground (reverse)
-        const f = (phase - landingStart) / (1 - landingStart);
-        const idx = Math.min(Math.floor((1 - f) * (smoothPts.length - 1)), smoothPts.length - 1);
-        [px, py] = [smoothPts[idx][0], smoothPts[idx][1]];
+        // Landing: reverse stagger (last launched = first to land)
+        const landDelay = (nWaves - 1 - waveIdx) * waveInterval;
+        const landPhase = phase - landingStart;
+        if (landPhase < landDelay) {
+          px = tx; py = ty; // waiting to land
+        } else {
+          const f = (landPhase - landDelay) / Math.max(perDroneFlightTime, 0.01);
+          const clampedF = Math.min(f, 1);
+          const idx = Math.min(Math.floor((1 - clampedF) * (smoothPts.length - 1)), smoothPts.length - 1);
+          [px, py] = [smoothPts[idx][0], smoothPts[idx][1]];
+        }
       }
 
       const [sx, sy] = toScreen(px, py);
 
-      // LED color: blue during takeoff/landing, target color during hold
+      // LED color based on state
       let cr = r, cg = g, cb = b;
-      if (phase < takeoffPhase * 0.8 || phase > landingStart + (1 - landingStart) * 0.2) {
-        cr = 0; cg = 60; cb = 200; // takeoff blue
+      if (!visible) {
+        cr = 20; cg = 20; cb = 40; // in bay: very dim
+      } else if (phase < launchDelay + perDroneFlightTime) {
+        cr = 0; cg = 60; cb = 200; // ascending: blue
+      } else if (phase > landingStart) {
+        cr = 0; cg = 60; cb = 200; // descending: blue
+      }
+      // else: target color (formation hold)
+
+      // Skip drawing if still in carrier bay (not yet launched)
+      if (!visible) {
+        // Draw tiny dim dot at ground position to show bay slot
+        const [bsx, bsy] = toScreen(gx, gy);
+        ctx.beginPath();
+        ctx.arc(bsx, bsy, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(20, 20, 50, 0.4)';
+        ctx.fill();
+        continue;
       }
 
       // Trail (last few positions)
@@ -263,7 +303,11 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
     ctx.fillText(`DRONE SHOW · ${drones.length} DRONES · ${mode.toUpperCase()}`, 10, 18);
     ctx.fillStyle = '#64748b';
     ctx.fillText(`t = ${t.toFixed(1)}s / ${totalDur.toFixed(0)}s`, 10, 34);
-    ctx.fillText(`Phase: ${phase < takeoffPhase ? 'TAKEOFF' : phase < holdEnd ? 'FORMATION' : phase < landingStart ? 'HOLD' : 'LANDING'}`, 10, 50);
+    // Count launched drones
+    const launchedCount = drones.filter((_: any, i: number) => phase >= Math.floor(i / BATCH_SIZE) * waveInterval).length;
+    const currentWave = Math.min(Math.floor(phase / waveInterval) + 1, nWaves);
+    const phaseLabel = phase < takeoffPhase ? `LAUNCHING Wave ${currentWave}/${nWaves}` : phase < holdEnd ? 'FORMATION' : phase < landingStart ? 'HOLD' : 'LANDING';
+    ctx.fillText(`Phase: ${phaseLabel}  [${launchedCount}/${drones.length} airborne]`, 10, 50);
 
     // Progress bar
     ctx.fillStyle = '#1e293b';
@@ -307,20 +351,31 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       ctx.stroke();
     }
 
+    // Wave-based batch launch (same as 2D)
+    const BATCH_3D = 4;
+    const nWaves3D = Math.ceil(drones.length / BATCH_3D);
+    const waveInterval3D = takeoffPhase * 0.6 / Math.max(nWaves3D, 1);
+    const flightTime3D = takeoffPhase * 0.4;
+    const holdEnd3D = (8 + 6) / totalDur;
+    const landingStart3D = 1 - 8 / totalDur;
+
     // Sort drones by depth for proper 3D rendering
-    const droneStates = drones.map((d: any) => {
+    const droneStates = drones.map((d: any, di: number) => {
       const gx = d.ground[0], gy = d.ground[1];
       const tx = d.target[0], ty = d.target[1];
+      const waveIdx = Math.floor(di / BATCH_3D);
+      const launchDelay = waveIdx * waveInterval3D;
 
       const controlPts = [[gx, gy, 0], [gx, gy, 30], [(gx+tx)/2, (gy+ty)/2, 55], [tx, ty, 50]];
       const smoothPts = smoothPath(controlPts, 40);
 
-      // ── Draw 3D Bezier trajectory curve ──
+      // Draw 3D Bezier trajectory curve
       if (smoothPts.length > 1) {
         ctx.beginPath();
-        const [ix0, iy0] = [isoX(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2]),
-                            isoY(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2])];
-        ctx.moveTo(ix0, iy0);
+        ctx.moveTo(
+          isoX(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2]),
+          isoY(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2]),
+        );
         for (let si = 1; si < smoothPts.length; si++) {
           ctx.lineTo(
             isoX(smoothPts[si][0], smoothPts[si][1], smoothPts[si][2]),
@@ -333,33 +388,46 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       }
 
       let px: number, py: number, pz: number;
-      const holdEnd = (8 + 6) / totalDur;
-      const landingStart = 1 - 8 / totalDur;
+      let visible = true;
 
-      if (phase < takeoffPhase) {
-        const f = phase / takeoffPhase;
+      if (phase < launchDelay) {
+        px = gx; py = gy; pz = 0;
+        visible = false;
+      } else if (phase < launchDelay + flightTime3D) {
+        const f = (phase - launchDelay) / flightTime3D;
         const idx = Math.min(Math.floor(f * (smoothPts.length - 1)), smoothPts.length - 1);
         [px, py, pz] = smoothPts[idx];
-      } else if (phase < landingStart) {
+      } else if (phase < landingStart3D) {
         px = tx; py = ty; pz = 50;
       } else {
-        const f = (phase - landingStart) / (1 - landingStart);
-        const idx = Math.min(Math.floor((1 - f) * (smoothPts.length - 1)), smoothPts.length - 1);
-        [px, py, pz] = smoothPts[idx];
+        const landDelay = (nWaves3D - 1 - waveIdx) * waveInterval3D;
+        const landPhase = phase - landingStart3D;
+        if (landPhase < landDelay) {
+          px = tx; py = ty; pz = 50;
+        } else {
+          const f = Math.min((landPhase - landDelay) / Math.max(flightTime3D, 0.01), 1);
+          const idx = Math.min(Math.floor((1 - f) * (smoothPts.length - 1)), smoothPts.length - 1);
+          [px, py, pz] = smoothPts[idx];
+        }
       }
 
       let cr = d.color[0], cg = d.color[1], cb = d.color[2];
-      if (phase < takeoffPhase * 0.8 || phase > landingStart + (1 - landingStart) * 0.2) {
+      if (!visible) {
+        cr = 20; cg = 20; cb = 40;
+      } else if (phase < launchDelay + flightTime3D) {
+        cr = 0; cg = 60; cb = 200;
+      } else if (phase > landingStart3D) {
         cr = 0; cg = 60; cb = 200;
       }
 
-      return { px, py, pz, cr, cg, cb, depth: px + py };
+      return { px, py, pz, cr, cg, cb, depth: px + py, visible };
     });
 
     // Sort by depth (far first)
     droneStates.sort((a: any, b: any) => a.depth - b.depth);
 
     for (const d of droneStates) {
+      if (!d.visible) continue; // still in carrier bay
       const sx = isoX(d.px, d.py, d.pz);
       const sy = isoY(d.px, d.py, d.pz);
 
