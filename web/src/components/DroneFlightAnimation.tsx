@@ -172,6 +172,20 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       // Compute smooth path using Catmull-Rom
       const smoothPts = smoothPath(controlPts, 60);
 
+      // ── Draw the full Bezier trajectory curve (thin smooth line) ──
+      if (smoothPts.length > 1) {
+        ctx.beginPath();
+        const [sx0, sy0] = toScreen(smoothPts[0][0], smoothPts[0][1]);
+        ctx.moveTo(sx0, sy0);
+        for (let si = 1; si < smoothPts.length; si++) {
+          const [sxi, syi] = toScreen(smoothPts[si][0], smoothPts[si][1]);
+          ctx.lineTo(sxi, syi);
+        }
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.12)`;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+
       // Current position based on phase
       let px: number, py: number;
 
@@ -300,6 +314,23 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
 
       const controlPts = [[gx, gy, 0], [gx, gy, 30], [(gx+tx)/2, (gy+ty)/2, 55], [tx, ty, 50]];
       const smoothPts = smoothPath(controlPts, 40);
+
+      // ── Draw 3D Bezier trajectory curve ──
+      if (smoothPts.length > 1) {
+        ctx.beginPath();
+        const [ix0, iy0] = [isoX(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2]),
+                            isoY(smoothPts[0][0], smoothPts[0][1], smoothPts[0][2])];
+        ctx.moveTo(ix0, iy0);
+        for (let si = 1; si < smoothPts.length; si++) {
+          ctx.lineTo(
+            isoX(smoothPts[si][0], smoothPts[si][1], smoothPts[si][2]),
+            isoY(smoothPts[si][0], smoothPts[si][1], smoothPts[si][2]),
+          );
+        }
+        ctx.strokeStyle = `rgba(${d.color[0]},${d.color[1]},${d.color[2]},0.1)`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
 
       let px: number, py: number, pz: number;
       const holdEnd = (8 + 6) / totalDur;

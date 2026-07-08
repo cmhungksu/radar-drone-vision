@@ -1,0 +1,30 @@
+{
+  "frame_id": "frame_f25f79fb",
+  "points": [
+    {
+      "point_id": "P0000",
+      "xyz": [
+        -50.0,
+        50.0,
+        50.0
+      ],
+      "rgb565": 31,
+      "rgb888": [
+        0,
+        0,
+        255
+      ],
+      "importance": 0.31,
+      "source_feature": "contour",
+      "group_id": "main"
+    }
+  ],
+  "drone_count": 5000,
+  "detail_score": 0.0,
+  "warnings": [
+    "POINT_DENSITY_TOO_LOW: only 1 contour points for 5000 drones",
+    "DETAIL_LOSS_HIGH: consider using fewer drones or simpler image"
+  ],
+  "image_width": 24,
+  "image_height": 24
+}

@@ -36,29 +36,61 @@ def assign_drones_to_formation(
     ground_positions: List[List[float]],
     formation_points: List[FormationPoint],
 ) -> List[int]:
-    """Optimal drone-to-point assignment using Hungarian algorithm.
+    """Drone-to-point assignment.
 
+    Uses Hungarian (optimal) for ≤500 drones, greedy nearest-neighbor for larger.
     Returns assignment[i] = index into formation_points for drone i.
     """
     n = len(ground_positions)
     m = len(formation_points)
     assert n == m, f"Mismatch: {n} ground positions vs {m} formation points"
 
-    # Cost matrix: Euclidean distance
-    cost = np.zeros((n, m), dtype=np.float64)
-    for i, gp in enumerate(ground_positions):
-        for j, fp in enumerate(formation_points):
-            dx = gp[0] - fp.xyz[0]
-            dy = gp[1] - fp.xyz[1]
-            dz = gp[2] - fp.xyz[2]
-            cost[i, j] = math.sqrt(dx*dx + dy*dy + dz*dz)
+    if n <= 500:
+        # Optimal O(n³) — feasible for small counts
+        cost = np.zeros((n, m), dtype=np.float64)
+        for i, gp in enumerate(ground_positions):
+            for j, fp in enumerate(formation_points):
+                dx = gp[0] - fp.xyz[0]
+                dy = gp[1] - fp.xyz[1]
+                dz = gp[2] - fp.xyz[2]
+                cost[i, j] = math.sqrt(dx*dx + dy*dy + dz*dz)
 
-    row_ind, col_ind = linear_sum_assignment(cost)
-    assignment = [0] * n
-    for r, c in zip(row_ind, col_ind):
-        assignment[r] = c
+        row_ind, col_ind = linear_sum_assignment(cost)
+        assignment = [0] * n
+        for r, c in zip(row_ind, col_ind):
+            assignment[r] = c
+        return assignment
+    else:
+        # Greedy nearest-neighbor O(n²) — fast for 500+ drones
+        from scipy.spatial import KDTree
+        fp_coords = np.array([fp.xyz for fp in formation_points])
+        gp_coords = np.array(ground_positions)
+        tree = KDTree(fp_coords)
 
-    return assignment
+        assignment = [0] * n
+        used = set()
+        # Sort ground positions by distance to center for better assignment
+        center = gp_coords.mean(axis=0)
+        order = np.argsort(np.linalg.norm(gp_coords - center, axis=1))
+
+        for idx in order:
+            _, candidates = tree.query(gp_coords[idx], k=min(20, m))
+            if isinstance(candidates, (int, np.integer)):
+                candidates = [candidates]
+            for c in candidates:
+                if c not in used:
+                    assignment[idx] = int(c)
+                    used.add(c)
+                    break
+            else:
+                # Fallback: find any unused
+                for j in range(m):
+                    if j not in used:
+                        assignment[idx] = j
+                        used.add(j)
+                        break
+
+        return assignment
 
 
 def generate_bezier_path(

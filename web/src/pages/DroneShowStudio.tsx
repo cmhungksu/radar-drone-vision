@@ -84,29 +84,40 @@ export default function DroneShowStudio() {
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Reset file input immediately so it can be re-used
+    if (fileRef.current) fileRef.current.value = '';
+
+    // Show local preview instantly (no server round-trip)
+    const localUrl = URL.createObjectURL(file);
+    setThumbnail(localUrl);
+    setPoints([]);
+    setFrameId(null);
+    setPlan(null);
+    setRenderImages([]);
+    setSimReport(null);
+    setDslResult(null);
+
     setLoading('uploading');
     const form = new FormData();
     form.append('file', file);
     try {
       const res = await fetch(`${API_BASE}/assets/upload`, { method: 'POST', body: form });
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
       const data = await res.json();
       setAssetId(data.asset_id);
-      // Get thumbnail
-      const thumbRes = await fetch(`${API_BASE}/assets/${data.asset_id}/thumbnail`);
-      const thumbData = await thumbRes.json();
-      setThumbnail(thumbData.thumbnail);
-      setPoints([]);
-      setFrameId(null);
-      setPlan(null);
-      setRenderImages([]);
-      setSimReport(null);
-      setDslResult(null);
+      setLoading('');
+
+      // Fetch server thumbnail in background (non-blocking)
+      fetch(`${API_BASE}/assets/${data.asset_id}/thumbnail`)
+        .then(r => r.json())
+        .then(d => { if (d.thumbnail) setThumbnail(d.thumbnail); })
+        .catch(() => {});
     } catch (err) {
       console.error('Upload failed:', err);
+      setLoading('');
+      setThumbnail(null);
     }
-    setLoading('');
-    // Reset file input so the same file can be re-selected
-    if (fileRef.current) fileRef.current.value = '';
   }, []);
 
   // Generate points
@@ -386,13 +397,15 @@ export default function DroneShowStudio() {
 
         <div className="card">
           <h3 className="card-header">2. 設定參數</h3>
-          <label className="text-xs text-slate-400 block mb-2">無人機數量 (5 ~ 10,000)</label>
+          <label className="text-xs text-slate-400 block mb-2">
+            無人機數量：<span className="text-green-400 font-mono font-bold">{droneCount.toLocaleString()} 台</span>
+          </label>
           <div className="flex gap-2 mb-2">
             {[20, 50, 100, 200].map(n => (
               <button key={n} onClick={() => { setDroneCount(n); setCustomCount(''); }}
                 className={`flex-1 py-2 rounded-md text-sm font-mono border transition-all ${
                   droneCount === n && !customCount
-                    ? 'bg-green-900/50 border-green-500 text-green-400'
+                    ? 'bg-green-900/50 border-green-500 text-green-400 shadow-[0_0_8px_rgba(34,197,94,0.3)]'
                     : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}>{n}</button>
             ))}
@@ -401,20 +414,23 @@ export default function DroneShowStudio() {
             <input
               type="number" min={5} max={10000} step={10}
               value={customCount}
+              onFocus={() => { if (!customCount) setCustomCount(String(droneCount)); }}
               onChange={e => {
-                setCustomCount(e.target.value);
-                const v = parseInt(e.target.value);
+                const val = e.target.value;
+                setCustomCount(val);
+                const v = parseInt(val);
                 if (v >= 5 && v <= 10000) setDroneCount(v);
               }}
-              placeholder="自訂數量 (200+)"
+              placeholder="自訂 5~10000"
               className={`flex-1 bg-slate-800 border rounded-md px-3 py-2 text-sm font-mono focus:outline-none transition-all ${
-                customCount ? 'border-green-500 text-green-400' : 'border-slate-700 text-slate-400'
+                customCount ? 'border-green-500 text-green-400 shadow-[0_0_8px_rgba(34,197,94,0.2)]' : 'border-slate-700 text-slate-400'
               }`}
             />
             {customCount && (
-              <span className="flex items-center text-xs text-green-400 font-mono">
-                {droneCount.toLocaleString()} 台
-              </span>
+              <button onClick={() => setCustomCount('')}
+                className="px-2 text-xs text-slate-500 hover:text-red-400">
+                ✕
+              </button>
             )}
           </div>
           <button onClick={handleGenerate} disabled={!assetId || loading !== ''}
