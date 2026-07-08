@@ -238,11 +238,11 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       if (!visible) {
         cr = 20; cg = 20; cb = 40; // in bay: very dim
       } else if (phase < launchDelay + perDroneFlightTime) {
-        cr = 0; cg = 60; cb = 200; // ascending: blue
+        cr = 255; cg = 230; cb = 0; // ascending: BRIGHT YELLOW (visible in flight)
       } else if (phase > landingStart) {
-        cr = 0; cg = 60; cb = 200; // descending: blue
+        cr = 255; cg = 230; cb = 0; // descending: BRIGHT YELLOW
       }
-      // else: target color (formation hold)
+      // else: target color (formation hold = image colors)
 
       // Skip drawing if still in carrier bay (not yet launched)
       if (!visible) {
@@ -415,9 +415,9 @@ export default function DroneFlightAnimation({ planId, mode }: DroneFlightAnimat
       if (!visible) {
         cr = 20; cg = 20; cb = 40;
       } else if (phase < launchDelay + flightTime3D) {
-        cr = 0; cg = 60; cb = 200;
+        cr = 255; cg = 230; cb = 0; // BRIGHT YELLOW during flight
       } else if (phase > landingStart3D) {
-        cr = 0; cg = 60; cb = 200;
+        cr = 255; cg = 230; cb = 0; // BRIGHT YELLOW during landing
       }
 
       return { px, py, pz, cr, cg, cb, depth: px + py, visible };

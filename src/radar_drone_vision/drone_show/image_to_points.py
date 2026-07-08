@@ -42,34 +42,59 @@ def load_and_preprocess(image_path: str | Path) -> Tuple[np.ndarray, np.ndarray]
     return bgr, gray
 
 
-def extract_contour_points(gray: np.ndarray) -> np.ndarray:
-    """Extract contour points with importance based on curvature."""
-    # Adaptive threshold for varied images
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+def extract_contour_points(gray: np.ndarray, bgr: Optional[np.ndarray] = None) -> np.ndarray:
+    """Extract contour points, filtering out dark/background regions."""
+    h, w = gray.shape
 
-    # Edge detection
-    edges = cv2.Canny(gray, 50, 150)
+    # Threshold: only keep bright-enough areas
+    _, binary = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
 
-    # Find contours
-    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    # If color image provided, also filter by color brightness
+    if bgr is not None:
+        brightness = bgr.astype(np.float32).sum(axis=2)
+        bright_mask = (brightness > 60).astype(np.uint8) * 255
+        binary = cv2.bitwise_and(binary, bright_mask)
+
+    # Clean up: remove small noise blobs
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+
+    # Edge detection on cleaned binary
+    edges = cv2.Canny(binary, 50, 150)
+
+    # Find contours — EXTERNAL only (skip internal dark-region borders)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     if not contours:
-        # Fallback: use binary image non-zero points
+        # Fallback: use bright pixels directly
         pts = np.column_stack(np.where(binary > 0))
         if len(pts) == 0:
             pts = np.column_stack(np.where(gray > 30))
-        return pts[:, ::-1] if len(pts) > 0 else np.array([[0, 0]])  # yx → xy
+        return pts[:, ::-1] if len(pts) > 0 else np.array([[0, 0]])
 
-    # Collect all contour points
+    # Collect contour points, but skip any that land on dark pixels
     all_pts = []
     for contour in contours:
         if len(contour) < 3:
             continue
         pts = contour.reshape(-1, 2)
-        all_pts.append(pts)
+        # Filter: only keep points where the image is actually bright
+        if bgr is not None:
+            bright_pts = []
+            for px, py in pts:
+                px_c = int(np.clip(px, 0, w - 1))
+                py_c = int(np.clip(py, 0, h - 1))
+                b, g, r = bgr[py_c, px_c]
+                if int(b) + int(g) + int(r) > 60:
+                    bright_pts.append([px, py])
+            if bright_pts:
+                all_pts.append(np.array(bright_pts))
+        else:
+            all_pts.append(pts)
 
     if not all_pts:
-        return np.array([[0, 0]])
+        pts = np.column_stack(np.where(binary > 0))
+        return pts[:, ::-1] if len(pts) > 0 else np.array([[0, 0]])
 
     return np.vstack(all_pts)
 
@@ -218,7 +243,7 @@ def generate_formation_from_image(
     palette = cluster_colors(rgb_img, n_colors=min(n_palette_colors, 8))
 
     # Extract contour points
-    contour_pts = extract_contour_points(gray)
+    contour_pts = extract_contour_points(gray, bgr=bgr)
     logger.info("Extracted %d contour points from %dx%d image", len(contour_pts), w, h)
 
     # Compute importance
