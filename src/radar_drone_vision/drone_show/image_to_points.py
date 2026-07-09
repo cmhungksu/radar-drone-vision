@@ -22,6 +22,29 @@ from .schemas import FormationFrame, FormationPoint
 logger = logging.getLogger(__name__)
 
 
+def _detect_background_color(bgr: np.ndarray) -> Tuple[np.ndarray, float]:
+    """Detect the dominant background color by sampling corners and edges."""
+    h, w = bgr.shape[:2]
+    # Sample corners (10% from each edge)
+    margin = max(2, min(h, w) // 10)
+    samples = np.vstack([
+        bgr[:margin, :margin].reshape(-1, 3),        # top-left
+        bgr[:margin, -margin:].reshape(-1, 3),        # top-right
+        bgr[-margin:, :margin].reshape(-1, 3),        # bottom-left
+        bgr[-margin:, -margin:].reshape(-1, 3),        # bottom-right
+        bgr[:margin, :].reshape(-1, 3),                # top edge
+        bgr[-margin:, :].reshape(-1, 3),               # bottom edge
+    ])
+    # Median of corner samples = background color
+    bg_color = np.median(samples, axis=0).astype(np.uint8)
+
+    # Calculate how much of the image matches this color (within tolerance)
+    diff = np.abs(bgr.astype(np.int16) - bg_color.astype(np.int16)).sum(axis=2)
+    bg_ratio = float((diff < 60).sum()) / (h * w)
+
+    return bg_color, bg_ratio
+
+
 def load_and_preprocess(image_path: str | Path) -> Tuple[np.ndarray, np.ndarray]:
     """Load image, remove background, return (color_image_bgr, gray)."""
     img = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED)
@@ -29,14 +52,23 @@ def load_and_preprocess(image_path: str | Path) -> Tuple[np.ndarray, np.ndarray]
         raise FileNotFoundError(f"Cannot load image: {image_path}")
 
     # Handle alpha channel (remove background)
-    if img.shape[2] == 4:
+    if len(img.shape) > 2 and img.shape[2] == 4:
         alpha = img[:, :, 3]
-        bgr = img[:, :, :3]
-        # Set transparent pixels to black
+        bgr = img[:, :, :3].copy()
         mask = alpha < 128
         bgr[mask] = [0, 0, 0]
     else:
-        bgr = img
+        bgr = img.copy()
+
+    # Auto-detect and remove solid background color
+    bg_color, bg_ratio = _detect_background_color(bgr)
+    if bg_ratio > 0.15:  # background covers >15% of image
+        # Mask out pixels similar to background color
+        diff = np.abs(bgr.astype(np.int16) - bg_color.astype(np.int16)).sum(axis=2)
+        bg_mask = diff < 60  # tolerance
+        bgr[bg_mask] = [0, 0, 0]  # set background to black
+        logger.info("Auto-removed background color BGR(%d,%d,%d), %.0f%% of image",
+                     bg_color[0], bg_color[1], bg_color[2], bg_ratio * 100)
 
     gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
     return bgr, gray
