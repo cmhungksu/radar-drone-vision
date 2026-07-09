@@ -1,0 +1,34 @@
+scene:
+  title: "IP Mascot Show - 200 Drones"
+  drones: 200
+  safety_profile: "visual_first"
+  camera: "front_audience"
+  frames:
+    - id: "takeoff"
+      type: "takeoff_blue"
+      duration: 10
+    - id: "mascot"
+      type: "image_formation"
+      asset: "mascot_outline.png"
+      hold: 8
+      scale: 1.2
+    - id: "rotate"
+      type: "transform"
+      instruction: "順時針旋轉 15 度"
+      duration: 5
+    - id: "color_flash"
+      type: "color_change"
+      color: [255, 230, 0]
+      duration: 3
+    - id: "return_color"
+      type: "transform"
+      instruction: "放大 10%"
+      duration: 3
+    - id: "landing"
+      type: "landing_blue"
+      duration: 10
+  obstacles:
+    - ref: "balloon_left"
+      avoid: true
+    - ref: "building_right"
+      avoid: true

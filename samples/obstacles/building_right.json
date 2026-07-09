@@ -1,0 +1,12 @@
+{
+  "name": "高空建築物 (右側)",
+  "type": "building",
+  "shape": "rect",
+  "canvas_x": 0.78,
+  "canvas_y": 0.5,
+  "canvas_w": 0.1,
+  "canvas_h": 0.25,
+  "z_min": 0,
+  "z_max": 65,
+  "safety_buffer": 5.0
+}

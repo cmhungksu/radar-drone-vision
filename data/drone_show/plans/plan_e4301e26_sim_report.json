@@ -1,0 +1,586 @@
+{
+  "simulation_version": "v1.0",
+  "simulation_only": true,
+  "drone_count": 200,
+  "sample_rate": 20,
+  "total_samples": 88600,
+  "inter_drone": {
+    "min_distance": 0.08,
+    "min_distance_time": 8.0,
+    "min_pair": [
+      49,
+      63
+    ],
+    "close_approach_count": 54038,
+    "close_approaches": [
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.05,
+        "distance": 2.999,
+        "position": [
+          -20.999,
+          -19.5,
+          1.025
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.15,
+        "distance": 2.999,
+        "position": [
+          -20.995,
+          -19.496,
+          3.036
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.2,
+        "distance": 2.998,
+        "position": [
+          -20.991,
+          -19.492,
+          4.023
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.25,
+        "distance": 2.996,
+        "position": [
+          -20.985,
+          -19.488,
+          4.997
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.3,
+        "distance": 2.995,
+        "position": [
+          -20.979,
+          -19.483,
+          5.958
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.35,
+        "distance": 2.994,
+        "position": [
+          -20.972,
+          -19.477,
+          6.907
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.4,
+        "distance": 2.991,
+        "position": [
+          -20.963,
+          -19.47,
+          7.844
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.45,
+        "distance": 2.989,
+        "position": [
+          -20.953,
+          -19.462,
+          8.768
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.5,
+        "distance": 2.986,
+        "position": [
+          -20.942,
+          -19.454,
+          9.68
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.55,
+        "distance": 2.983,
+        "position": [
+          -20.93,
+          -19.444,
+          10.58
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.6,
+        "distance": 2.98,
+        "position": [
+          -20.917,
+          -19.434,
+          11.468
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.65,
+        "distance": 2.977,
+        "position": [
+          -20.903,
+          -19.422,
+          12.344
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.7,
+        "distance": 2.974,
+        "position": [
+          -20.888,
+          -19.41,
+          13.208
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.75,
+        "distance": 2.97,
+        "position": [
+          -20.872,
+          -19.397,
+          14.06
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.8,
+        "distance": 2.965,
+        "position": [
+          -20.854,
+          -19.383,
+          14.9
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.85,
+        "distance": 2.961,
+        "position": [
+          -20.836,
+          -19.368,
+          15.729
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.9,
+        "distance": 2.956,
+        "position": [
+          -20.816,
+          -19.352,
+          16.545
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 0.95,
+        "distance": 2.952,
+        "position": [
+          -20.796,
+          -19.336,
+          17.351
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 1.0,
+        "distance": 2.947,
+        "position": [
+          -20.774,
+          -19.318,
+          18.145
+        ]
+      },
+      {
+        "drone_a": 0,
+        "drone_b": 1,
+        "time": 1.05,
+        "distance": 2.941,
+        "position": [
+          -20.751,
+          -19.3,
+          18.927
+        ]
+      }
+    ]
+  },
+  "speed_summary": {
+    "max_speed": 20.5,
+    "max_acceleration": 35.32,
+    "total_violations": 2000
+  },
+  "per_drone_speed": [
+    {
+      "drone_id": "D0000",
+      "max_speed": 20.5,
+      "max_acceleration": 35.32,
+      "violations": [
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.05,
+          "value": 20.5,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.1,
+          "value": 20.24,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.15,
+          "value": 19.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.2,
+          "value": 19.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.25,
+          "value": 19.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.3,
+          "value": 19.22,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.35,
+          "value": 18.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.4,
+          "value": 18.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.45,
+          "value": 18.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.5,
+          "value": 18.24,
+          "limit": 15.0
+        }
+      ]
+    },
+    {
+      "drone_id": "D0001",
+      "max_speed": 20.5,
+      "max_acceleration": 31.58,
+      "violations": [
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.05,
+          "value": 20.5,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.1,
+          "value": 20.24,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.15,
+          "value": 19.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.2,
+          "value": 19.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.25,
+          "value": 19.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.3,
+          "value": 19.22,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.35,
+          "value": 18.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.4,
+          "value": 18.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.45,
+          "value": 18.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.5,
+          "value": 18.24,
+          "limit": 15.0
+        }
+      ]
+    },
+    {
+      "drone_id": "D0002",
+      "max_speed": 20.5,
+      "max_acceleration": 32.17,
+      "violations": [
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.05,
+          "value": 20.5,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.1,
+          "value": 20.24,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.15,
+          "value": 19.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.2,
+          "value": 19.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.25,
+          "value": 19.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.3,
+          "value": 19.22,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.35,
+          "value": 18.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.4,
+          "value": 18.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.45,
+          "value": 18.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.5,
+          "value": 18.24,
+          "limit": 15.0
+        }
+      ]
+    },
+    {
+      "drone_id": "D0003",
+      "max_speed": 20.5,
+      "max_acceleration": 25.45,
+      "violations": [
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.05,
+          "value": 20.5,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.1,
+          "value": 20.24,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.15,
+          "value": 19.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.2,
+          "value": 19.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.25,
+          "value": 19.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.3,
+          "value": 19.22,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.35,
+          "value": 18.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.4,
+          "value": 18.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.45,
+          "value": 18.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.5,
+          "value": 18.24,
+          "limit": 15.0
+        }
+      ]
+    },
+    {
+      "drone_id": "D0004",
+      "max_speed": 20.5,
+      "max_acceleration": 20.16,
+      "violations": [
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.05,
+          "value": 20.5,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.1,
+          "value": 20.24,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.15,
+          "value": 19.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.2,
+          "value": 19.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.25,
+          "value": 19.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.3,
+          "value": 19.22,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.35,
+          "value": 18.98,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.4,
+          "value": 18.74,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.45,
+          "value": 18.48,
+          "limit": 15.0
+        },
+        {
+          "type": "SPEED_EXCEEDED",
+          "time": 0.5,
+          "value": 18.24,
+          "limit": 15.0
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "CRITICAL_COLLISION_RISK: min distance 0.08m",
+    "SPEED_WARNING: max 20.5 m/s exceeds 15 m/s",
+    "SPEED_VIOLATIONS: 2000 segments exceed limits"
+  ],
+  "risk_level": "critical"
+}

@@ -329,3 +329,53 @@ def parse_yaml_dsl(yaml_text: str) -> dict:
         return yaml.safe_load(yaml_text)
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML: {e}") from e
+
+
+def merge_dsl_patch(base_dsl: dict, patch: dict) -> dict:
+    """Merge an LLM-generated patch into an existing Scene DSL.
+
+    The patch can:
+    - Override scene-level fields (title, drones, safety_profile)
+    - Add/modify/remove individual frames by id
+    - Add/remove obstacles
+
+    Safety: patch is validated before merge. Forbidden patterns rejected.
+
+    Returns merged DSL dict.
+    """
+    import copy
+    merged = copy.deepcopy(base_dsl)
+    scene = merged.setdefault("scene", {})
+    patch_scene = patch.get("scene", patch)  # handle both {scene:{...}} and flat
+
+    # Validate patch for safety
+    errors = validate_dsl({"scene": {**scene, **patch_scene, "frames": scene.get("frames", [])}})
+    # Only check for safety violations, not missing fields
+    safety_errors = [e for e in errors if "SAFETY VIOLATION" in e]
+    if safety_errors:
+        raise ValueError(f"Patch rejected: {safety_errors}")
+
+    # Merge scene-level fields
+    for key in ["title", "drones", "safety_profile", "camera"]:
+        if key in patch_scene:
+            scene[key] = patch_scene[key]
+
+    # Merge frames
+    if "frames" in patch_scene:
+        existing_frames = {f.get("id"): f for f in scene.get("frames", [])}
+        for patch_frame in patch_scene["frames"]:
+            fid = patch_frame.get("id")
+            if patch_frame.get("_delete"):
+                existing_frames.pop(fid, None)
+            elif fid and fid in existing_frames:
+                existing_frames[fid].update(patch_frame)
+            else:
+                existing_frames[fid or f"frame_{len(existing_frames)}"] = patch_frame
+        scene["frames"] = list(existing_frames.values())
+
+    # Merge obstacles
+    if "obstacles" in patch_scene:
+        scene["obstacles"] = patch_scene["obstacles"]
+
+    logger.info("DSL patch merged: %d frame updates", len(patch_scene.get("frames", [])))
+    return merged

@@ -131,36 +131,84 @@ def extract_contour_points(gray: np.ndarray, bgr: Optional[np.ndarray] = None) -
     return np.vstack(all_pts)
 
 
+def extract_skeleton(gray: np.ndarray, threshold: int = 30) -> np.ndarray:
+    """Extract skeleton (medial axis) of bright regions.
+
+    Returns skeleton point coordinates as (N, 2) array [x, y].
+    Skeleton captures the structural 'bones' of the image for thin features.
+    """
+    from skimage.morphology import skeletonize
+    binary = (gray > threshold).astype(np.uint8)
+    skeleton = skeletonize(binary).astype(np.uint8)
+    pts = np.column_stack(np.where(skeleton > 0))[:, ::-1]  # yx → xy
+    return pts if len(pts) > 0 else np.array([[0, 0]])
+
+
+def score_saliency(gray: np.ndarray) -> np.ndarray:
+    """Compute a saliency map highlighting visually important regions.
+
+    Uses spectral residual approach: regions that differ from the
+    average frequency content are more salient (eyes, text, edges).
+    Returns float32 saliency map same size as input, values in [0, 1].
+    """
+    h, w = gray.shape
+    # Spectral residual saliency
+    scale = max(1, min(h, w) // 64)
+    small = cv2.resize(gray, (w // scale, h // scale))
+    dft = np.fft.fft2(small.astype(np.float32))
+    magnitude = np.log(np.abs(dft) + 1e-8)
+    phase = np.angle(dft)
+    # Spectral residual = magnitude - averaged magnitude
+    avg_mag = cv2.blur(magnitude, (3, 3))
+    residual = magnitude - avg_mag
+    # Reconstruct with residual magnitude and original phase
+    saliency_small = np.abs(np.fft.ifft2(np.exp(residual + 1j * phase))) ** 2
+    # Gaussian blur for smoothness
+    saliency_small = cv2.GaussianBlur(saliency_small.astype(np.float32), (5, 5), 0)
+    # Resize back
+    saliency = cv2.resize(saliency_small, (w, h))
+    # Normalize to [0, 1]
+    smin, smax = saliency.min(), saliency.max()
+    if smax > smin:
+        saliency = (saliency - smin) / (smax - smin)
+    return saliency.astype(np.float32)
+
+
 def compute_importance(points: np.ndarray, gray: np.ndarray) -> np.ndarray:
-    """Compute per-point importance based on local curvature and gradient."""
+    """Compute per-point importance based on curvature, gradient, and saliency."""
     n = len(points)
     importance = np.ones(n, dtype=np.float64) * 0.5
-
     h, w = gray.shape
+
+    # Pre-compute saliency map
+    saliency = score_saliency(gray)
 
     for i in range(n):
         x, y = int(points[i, 0]), int(points[i, 1])
         x = np.clip(x, 1, w - 2)
         y = np.clip(y, 1, h - 2)
 
-        # Gradient magnitude as importance
+        # Gradient magnitude
         gx = float(gray[y, x + 1]) - float(gray[y, x - 1])
         gy = float(gray[y + 1, x]) - float(gray[y - 1, x])
-        grad = np.sqrt(gx**2 + gy**2) / 360.0  # normalize to ~[0, 1]
+        grad = np.sqrt(gx**2 + gy**2) / 360.0
 
-        # Curvature: compare with neighbors in the point list
+        # Curvature
         if i > 0 and i < n - 1:
             v1 = points[i] - points[i - 1]
             v2 = points[i + 1] - points[i]
             len1 = np.linalg.norm(v1) + 1e-8
             len2 = np.linalg.norm(v2) + 1e-8
             cos_angle = np.dot(v1, v2) / (len1 * len2)
-            curvature = 1.0 - np.clip(cos_angle, -1, 1)  # 0=straight, 2=U-turn
-            curvature = curvature / 2.0  # normalize to [0, 1]
+            curvature = (1.0 - np.clip(cos_angle, -1, 1)) / 2.0
         else:
             curvature = 0.3
 
-        importance[i] = np.clip(0.3 * grad + 0.7 * curvature + 0.1, 0.0, 1.0)
+        # Saliency at this point
+        sal = float(saliency[y, x])
+
+        # Weighted combination: saliency 30% + curvature 40% + gradient 20% + base 10%
+        importance[i] = np.clip(0.3 * sal + 0.4 * curvature + 0.2 * grad + 0.1, 0.0, 1.0)
 
     return importance
 
@@ -276,7 +324,25 @@ def generate_formation_from_image(
 
     # Extract contour points
     contour_pts = extract_contour_points(gray, bgr=bgr)
-    logger.info("Extracted %d contour points from %dx%d image", len(contour_pts), w, h)
+    # Also extract skeleton for thin structural features
+    skeleton_pts = extract_skeleton(gray, threshold=30)
+    # Merge contour + skeleton (skeleton fills thin areas contours miss)
+    if len(skeleton_pts) > 1 and skeleton_pts[0][0] != 0:
+        contour_pts = np.vstack([contour_pts, skeleton_pts])
+        # Remove duplicates (within 2px)
+        if len(contour_pts) > drone_count * 3:
+            from scipy.spatial import KDTree
+            tree = KDTree(contour_pts)
+            keep = np.ones(len(contour_pts), dtype=bool)
+            for i in range(len(contour_pts)):
+                if not keep[i]:
+                    continue
+                neighbors = tree.query_ball_point(contour_pts[i], r=2.0)
+                for j in neighbors:
+                    if j > i:
+                        keep[j] = False
+            contour_pts = contour_pts[keep]
+    logger.info("Extracted %d points (contour+skeleton) from %dx%d image", len(contour_pts), w, h)
 
     # Compute importance
     imp = compute_importance(contour_pts, gray)

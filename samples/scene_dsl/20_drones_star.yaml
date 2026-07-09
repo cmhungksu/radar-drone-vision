@@ -1,0 +1,17 @@
+scene:
+  title: "Star Formation - 20 Drones"
+  drones: 20
+  safety_profile: "safety_first"
+  camera: "front_audience"
+  frames:
+    - id: "takeoff"
+      type: "takeoff_blue"
+      duration: 8
+    - id: "star"
+      type: "image_formation"
+      asset: "simple_star.svg"
+      hold: 8
+      scale: 1.0
+    - id: "landing"
+      type: "landing_blue"
+      duration: 8

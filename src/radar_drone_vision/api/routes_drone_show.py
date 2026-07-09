@@ -246,6 +246,77 @@ async def simulate_plan(plan_id: str, body: dict = {}):
     return report
 
 
+# ── Feasibility Report (§19) ──────────────────────────────────────────────────
+
+@router.get("/report/{plan_id}")
+async def get_feasibility_report(plan_id: str):
+    """Generate a full feasibility report for a plan (§19 of spec).
+
+    Returns comprehensive report with all metrics, warnings, and recommendations.
+    """
+    plan_path = PLANS_DIR / f"{plan_id}.json"
+    if not plan_path.exists():
+        raise HTTPException(404, f"Plan not found: {plan_id}")
+
+    with open(plan_path) as f:
+        plan_data = json.load(f)
+
+    # Run simulation if not already done
+    sim_path = PLANS_DIR / f"{plan_id}_sim_report.json"
+    if sim_path.exists():
+        with open(sim_path) as f:
+            sim = json.load(f)
+    else:
+        from radar_drone_vision.drone_show.simulation import run_full_simulation
+        sim = run_full_simulation(plan_data, sample_rate=10)
+        with open(sim_path, "w") as f:
+            json.dump(sim, f, indent=2)
+
+    meta = plan_data.get("metadata", {})
+
+    # Build the full report per §19
+    report = {
+        "simulation_only": True,
+        "report_type": "feasibility",
+        "plan_id": plan_id,
+        # Basic info
+        "show_title": meta.get("title", plan_id),
+        "drone_count": plan_data.get("drone_count", 0),
+        "total_duration_sec": plan_data.get("total_duration_sec", 0),
+        "frame_count": meta.get("frame_count", len(plan_data.get("frames", []))),
+        "algorithm_version": meta.get("algorithm_version", "unknown"),
+        # Distance metrics
+        "min_drone_distance": sim.get("inter_drone", {}).get("min_distance", 0),
+        "min_obstacle_distance": min(sim.get("obstacle_check", {}).get("min_obstacle_distance", 999.0), 999.0),
+        "close_approach_count": sim.get("inter_drone", {}).get("close_approach_count", 0),
+        # Speed metrics
+        "max_speed_mps": sim.get("speed_summary", {}).get("max_speed", 0),
+        "max_acceleration_mps2": sim.get("speed_summary", {}).get("max_acceleration", 0),
+        "speed_violations": sim.get("speed_summary", {}).get("total_violations", 0),
+        # Quality metrics
+        "detail_score": meta.get("detail_score", 0),
+        "risk_level": sim.get("risk_level", "unknown"),
+        # Warnings
+        "warnings": sim.get("warnings", []) + meta.get("warnings", []),
+        # Recommendations
+        "recommendations": [],
+    }
+
+    # Generate recommendations
+    if report["min_drone_distance"] < 2.0:
+        report["recommendations"].append("增加轉場時間或降低圖形密度以提高最小間距")
+    if report["max_speed_mps"] > 15.0:
+        report["recommendations"].append("降低轉場速度，建議每段轉場增加 2-3 秒")
+    if report["detail_score"] < 0.5:
+        report["recommendations"].append("圖形細節不足，建議增加無人機數量或簡化圖案")
+    if report["drone_count"] < 50:
+        report["recommendations"].append("無人機數量偏少，僅適合簡單圖形展演")
+    if report["close_approach_count"] > 10:
+        report["recommendations"].append("大量接近事件，建議啟用高度分層或重新規劃路徑")
+
+    return report
+
+
 # ── Path Smoothing ────────────────────────────────────────────────────────────
 
 @router.post("/smooth-path")
@@ -624,6 +695,93 @@ async def parse_natural_instruction(body: dict):
 
     result = parse_instruction(instruction)
     return result
+
+
+# ── Video Keyframe Extraction (§5.4) ──────────────────────────────────────────
+
+@router.post("/video/extract-keyframes")
+async def extract_video_keyframes(file: UploadFile = File(...), max_frames: int = 8):
+    """Upload a video and extract keyframes for drone show animation.
+
+    Each keyframe becomes a formation frame. Returns keyframe list with timestamps.
+    """
+    vid_dir = DATA_DIR / "drone_show" / "videos"
+    vid_dir.mkdir(parents=True, exist_ok=True)
+    vid_id = f"vid_{uuid.uuid4().hex[:8]}"
+    ext = Path(file.filename or "video.mp4").suffix or ".mp4"
+    save_path = vid_dir / f"{vid_id}{ext}"
+
+    content = await file.read()
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    from radar_drone_vision.drone_show.video_to_frames import extract_keyframes
+
+    kf_dir = ASSETS_DIR / vid_id
+    try:
+        keyframes = extract_keyframes(save_path, max_frames=max_frames, output_dir=str(kf_dir))
+    except Exception as exc:
+        raise HTTPException(500, f"Keyframe extraction failed: {exc}") from exc
+
+    logger.info("Extracted %d keyframes from %s", len(keyframes), file.filename)
+    return {
+        "video_id": vid_id,
+        "keyframes": keyframes,
+        "total_keyframes": len(keyframes),
+    }
+
+
+# ── DSL Patch Merge (§15.7) ──────────────────────────────────────────────────
+
+@router.post("/dsl/patch")
+async def patch_scene_dsl(body: dict):
+    """Merge an LLM-generated patch into an existing compiled DSL job.
+
+    Body: { job_id, patch: { scene: { frames: [...], ... } } }
+    The patch can add/modify/remove frames and change scene settings.
+    """
+    job_id = body.get("job_id", "")
+    patch = body.get("patch", {})
+
+    job_path = PLANS_DIR / f"{job_id}.json"
+    if not job_path.exists():
+        raise HTTPException(404, f"DSL job not found: {job_id}")
+
+    with open(job_path) as f:
+        base_job = json.load(f)
+
+    from radar_drone_vision.drone_show.scene_dsl import merge_dsl_patch, compile_dsl
+
+    # Reconstruct DSL from compiled job
+    base_dsl = {"scene": {
+        "title": base_job.get("title", ""),
+        "drones": base_job.get("drone_count", 50),
+        "safety_profile": base_job.get("safety_profile", "safety_first"),
+        "frames": [{"id": f.get("frame_id", ""), "type": f.get("type", "")}
+                   for f in base_job.get("frames", [])],
+    }}
+
+    try:
+        merged = merge_dsl_patch(base_dsl, patch)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+    # Re-compile the merged DSL
+    compiled = compile_dsl(merged, assets_dir=ASSETS_DIR)
+    if not compiled.get("success"):
+        raise HTTPException(422, {"errors": compiled.get("errors", [])})
+
+    # Save
+    new_path = PLANS_DIR / f"{compiled['job_id']}.json"
+    with open(new_path, "w") as f:
+        json.dump(compiled, f, indent=2)
+
+    return {
+        "original_job_id": job_id,
+        "new_job_id": compiled["job_id"],
+        "merged_frame_count": compiled["frame_count"],
+        "drone_count": compiled["drone_count"],
+    }
 
 
 # ── Multi-Frame Storyboard ────────────────────────────────────────────────────

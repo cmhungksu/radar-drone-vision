@@ -62,3 +62,67 @@ def nearest_palette_color(r: int, g: int, b: int,
             best_dist = d
             best = c
     return best
+
+
+def compute_color_loss_report(
+    original_colors: list[list[int]],
+    quantized_colors: list[list[int]],
+    palette: list[list[int]],
+) -> dict:
+    """Compute color degradation report after palette quantization.
+
+    Returns:
+        color_loss_score: 0.0 (perfect) to 1.0 (total loss)
+        avg_delta_e: average perceptual color difference
+        max_delta_e: worst case color difference
+        palette_coverage: how many palette colors are actually used
+        warnings: list of color-related warnings
+    """
+    import numpy as np
+
+    if not original_colors or not quantized_colors:
+        return {"color_loss_score": 0.0, "avg_delta_e": 0.0, "max_delta_e": 0.0,
+                "palette_coverage": 0, "warnings": []}
+
+    n = min(len(original_colors), len(quantized_colors))
+    deltas = []
+    for i in range(n):
+        o = original_colors[i]
+        q = quantized_colors[i]
+        # Simplified Delta E (Euclidean in RGB, not perceptually accurate but fast)
+        de = ((o[0]-q[0])**2 + (o[1]-q[1])**2 + (o[2]-q[2])**2) ** 0.5
+        deltas.append(de)
+
+    avg_de = float(np.mean(deltas)) if deltas else 0.0
+    max_de = float(np.max(deltas)) if deltas else 0.0
+    # Normalize: max possible delta_e in RGB = sqrt(3*255^2) ≈ 441
+    color_loss_score = min(1.0, avg_de / 100.0)  # 100 = significant loss threshold
+
+    # Palette coverage
+    used_colors = set()
+    for q in quantized_colors:
+        for i, p in enumerate(palette):
+            if q == p:
+                used_colors.add(i)
+                break
+    coverage = len(used_colors)
+
+    warnings = []
+    if color_loss_score > 0.3:
+        warnings.append(f"COLOR_PALETTE_LOSS: avg color difference {avg_de:.1f}, "
+                        f"loss score {color_loss_score:.2f}")
+    if max_de > 150:
+        warnings.append(f"COLOR_MAX_DEVIATION: worst case {max_de:.1f} "
+                        f"(some colors severely distorted)")
+    if coverage < len(palette) * 0.5:
+        warnings.append(f"PALETTE_UNDERUSED: only {coverage}/{len(palette)} "
+                        f"palette colors used")
+
+    return {
+        "color_loss_score": round(color_loss_score, 3),
+        "avg_delta_e": round(avg_de, 1),
+        "max_delta_e": round(max_de, 1),
+        "palette_coverage": coverage,
+        "palette_size": len(palette),
+        "warnings": warnings,
+    }

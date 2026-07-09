@@ -1,0 +1,860 @@
+{
+  "frame_id": "frame_d7ac8737",
+  "points": [
+    {
+      "point_id": "P0000",
+      "xyz": [
+        -10.35,
+        14.65,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.294,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0001",
+      "xyz": [
+        -8.2,
+        13.67,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.189,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0002",
+      "xyz": [
+        -10.74,
+        13.87,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.334,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0003",
+      "xyz": [
+        -11.52,
+        16.99,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.536,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0004",
+      "xyz": [
+        -14.45,
+        23.24,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.587,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0005",
+      "xyz": [
+        -9.38,
+        18.36,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.427,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0006",
+      "xyz": [
+        -1.95,
+        -5.47,
+        50.0
+      ],
+      "rgb565": 5385,
+      "rgb888": [
+        22,
+        163,
+        74
+      ],
+      "importance": 0.246,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0007",
+      "xyz": [
+        8.79,
+        -33.2,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.497,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0008",
+      "xyz": [
+        11.52,
+        -36.52,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.73,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0009",
+      "xyz": [
+        -11.33,
+        20.12,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.198,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0010",
+      "xyz": [
+        0.39,
+        4.3,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.542,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0011",
+      "xyz": [
+        1.95,
+        -4.3,
+        50.0
+      ],
+      "rgb565": 5385,
+      "rgb888": [
+        22,
+        163,
+        74
+      ],
+      "importance": 0.244,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0012",
+      "xyz": [
+        -15.62,
+        25.59,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.587,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0013",
+      "xyz": [
+        18.16,
+        23.83,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.7,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0014",
+      "xyz": [
+        13.87,
+        13.28,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.312,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0015",
+      "xyz": [
+        -15.23,
+        3.91,
+        50.0
+      ],
+      "rgb565": 20208,
+      "rgb888": [
+        74,
+        222,
+        128
+      ],
+      "importance": 0.418,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0016",
+      "xyz": [
+        13.09,
+        15.82,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.691,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0017",
+      "xyz": [
+        -13.28,
+        18.36,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.35,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0018",
+      "xyz": [
+        11.52,
+        -38.87,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.439,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0019",
+      "xyz": [
+        10.74,
+        14.84,
+        50.0
+      ],
+      "rgb565": 20208,
+      "rgb888": [
+        74,
+        222,
+        128
+      ],
+      "importance": 0.502,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0020",
+      "xyz": [
+        -17.58,
+        23.83,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.185,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0021",
+      "xyz": [
+        9.57,
+        20.31,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.782,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0022",
+      "xyz": [
+        -15.82,
+        17.58,
+        50.0
+      ],
+      "rgb565": 17323,
+      "rgb888": [
+        70,
+        116,
+        92
+      ],
+      "importance": 0.577,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0023",
+      "xyz": [
+        10.55,
+        22.66,
+        50.0
+      ],
+      "rgb565": 30001,
+      "rgb888": [
+        115,
+        166,
+        137
+      ],
+      "importance": 0.39,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0024",
+      "xyz": [
+        -9.57,
+        -37.3,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.715,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0025",
+      "xyz": [
+        -16.8,
+        27.93,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.579,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0026",
+      "xyz": [
+        -14.45,
+        27.54,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.58,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0027",
+      "xyz": [
+        -2.15,
+        4.69,
+        50.0
+      ],
+      "rgb565": 20208,
+      "rgb888": [
+        74,
+        222,
+        128
+      ],
+      "importance": 0.561,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0028",
+      "xyz": [
+        -13.28,
+        25.59,
+        50.0
+      ],
+      "rgb565": 5385,
+      "rgb888": [
+        22,
+        163,
+        74
+      ],
+      "importance": 0.588,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0029",
+      "xyz": [
+        5.27,
+        -37.3,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.408,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0030",
+      "xyz": [
+        -12.89,
+        32.42,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.456,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0031",
+      "xyz": [
+        1.56,
+        -35.16,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.251,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0032",
+      "xyz": [
+        -4.88,
+        8.98,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.175,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0033",
+      "xyz": [
+        -13.67,
+        21.29,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.586,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0034",
+      "xyz": [
+        -15.62,
+        19.53,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.575,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0035",
+      "xyz": [
+        -16.6,
+        22.07,
+        50.0
+      ],
+      "rgb565": 20208,
+      "rgb888": [
+        74,
+        222,
+        128
+      ],
+      "importance": 0.525,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0036",
+      "xyz": [
+        -1.37,
+        -2.93,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.275,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0037",
+      "xyz": [
+        -5.47,
+        3.71,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.198,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0038",
+      "xyz": [
+        3.32,
+        3.91,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.209,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0039",
+      "xyz": [
+        -9.18,
+        16.02,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.382,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0040",
+      "xyz": [
+        4.69,
+        13.87,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.7,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0041",
+      "xyz": [
+        -19.34,
+        28.91,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.577,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0042",
+      "xyz": [
+        2.15,
+        6.25,
+        50.0
+      ],
+      "rgb565": 5192,
+      "rgb888": [
+        23,
+        136,
+        67
+      ],
+      "importance": 0.21,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0043",
+      "xyz": [
+        -1.56,
+        -33.59,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.238,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0044",
+      "xyz": [
+        -6.64,
+        1.37,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.541,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0045",
+      "xyz": [
+        -6.84,
+        16.02,
+        50.0
+      ],
+      "rgb565": 40597,
+      "rgb888": [
+        154,
+        210,
+        175
+      ],
+      "importance": 0.181,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0046",
+      "xyz": [
+        19.92,
+        22.07,
+        50.0
+      ],
+      "rgb565": 17323,
+      "rgb888": [
+        70,
+        116,
+        92
+      ],
+      "importance": 0.724,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0047",
+      "xyz": [
+        -10.16,
+        22.46,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.37,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0048",
+      "xyz": [
+        -7.23,
+        18.55,
+        50.0
+      ],
+      "rgb565": 49081,
+      "rgb888": [
+        186,
+        246,
+        207
+      ],
+      "importance": 0.471,
+      "source_feature": "contour",
+      "group_id": "main"
+    },
+    {
+      "point_id": "P0049",
+      "xyz": [
+        -18.55,
+        20.31,
+        50.0
+      ],
+      "rgb565": 7111,
+      "rgb888": [
+        24,
+        120,
+        63
+      ],
+      "importance": 0.583,
+      "source_feature": "contour",
+      "group_id": "main"
+    }
+  ],
+  "drone_count": 50,
+  "detail_score": 1.0,
+  "warnings": [],
+  "image_width": 512,
+  "image_height": 512
+}

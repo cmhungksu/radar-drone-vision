@@ -1,0 +1,21 @@
+scene:
+  title: "CoolCold Logo - 50 Drones"
+  drones: 50
+  safety_profile: "safety_first"
+  camera: "front_audience"
+  frames:
+    - id: "takeoff"
+      type: "takeoff_blue"
+      duration: 8
+    - id: "logo"
+      type: "image_formation"
+      asset: "coolcold_logo_placeholder.png"
+      hold: 6
+      scale: 1.0
+    - id: "expand"
+      type: "transform"
+      instruction: "放大 15%"
+      duration: 4
+    - id: "landing"
+      type: "landing_blue"
+      duration: 8

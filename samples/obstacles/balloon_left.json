@@ -1,0 +1,12 @@
+{
+  "name": "大型氣球 (左側)",
+  "type": "balloon",
+  "shape": "circle",
+  "canvas_x": 0.2,
+  "canvas_y": 0.3,
+  "canvas_w": 0.15,
+  "canvas_h": 0.15,
+  "z_min": 35,
+  "z_max": 85,
+  "safety_buffer": 8.0
+}

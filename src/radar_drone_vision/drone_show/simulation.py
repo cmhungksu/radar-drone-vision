@@ -186,6 +186,45 @@ def check_speed_acceleration(
     }
 
 
+def check_obstacle_distances(
+    all_paths: List[List[dict]],
+    obstacles: List[dict],
+) -> dict:
+    """Check minimum distance from all drone paths to all obstacles.
+
+    Returns {min_obstacle_distance, violations[]}.
+    """
+    from radar_drone_vision.drone_show.obstacles import ObstacleVolume
+
+    if not obstacles:
+        return {"min_obstacle_distance": float('inf'), "violations": [], "checked": False}
+
+    obs_list = [ObstacleVolume.from_dict(o) for o in obstacles]
+    min_dist = float('inf')
+    violations = []
+
+    for drone_idx, path in enumerate(all_paths):
+        for sample in path:
+            x, y, z = sample["xyz"]
+            for obs in obs_list:
+                d = obs.distance_to_point(x, y, z)
+                if d < min_dist:
+                    min_dist = d
+                if d < 0:
+                    violations.append({
+                        "drone": drone_idx,
+                        "time": round(sample["t"], 2),
+                        "obstacle": obs.name,
+                        "distance": round(d, 2),
+                    })
+
+    return {
+        "min_obstacle_distance": round(min_dist, 2),
+        "violations": violations[:20],
+        "checked": True,
+    }
+
+
 def run_full_simulation(plan_data: dict, sample_rate: int = 10) -> dict:
     """Run complete simulation on a timeline plan.
 
@@ -210,12 +249,20 @@ def run_full_simulation(plan_data: dict, sample_rate: int = 10) -> dict:
     # Inter-drone distances
     dist_report = check_min_distances(all_paths)
 
+    # Obstacle distance check
+    obstacles = plan_data.get("metadata", {}).get("obstacles", [])
+    obs_report = check_obstacle_distances(all_paths, obstacles)
+
     # Aggregate
     all_speed_violations = sum(len(r["violations"]) for r in speed_reports)
     max_speed_overall = max(r["max_speed"] for r in speed_reports) if speed_reports else 0
     max_accel_overall = max(r["max_acceleration"] for r in speed_reports) if speed_reports else 0
 
     warnings = []
+    if obs_report["checked"] and obs_report["min_obstacle_distance"] < 0:
+        warnings.append(f"OBSTACLE_PENETRATION: {len(obs_report['violations'])} path segments inside obstacles")
+    elif obs_report["checked"] and obs_report["min_obstacle_distance"] < 3.0:
+        warnings.append(f"OBSTACLE_TOO_CLOSE: min distance {obs_report['min_obstacle_distance']:.1f}m")
     if dist_report["min_distance"] < 1.0:
         warnings.append(f"CRITICAL_COLLISION_RISK: min distance {dist_report['min_distance']:.2f}m")
     elif dist_report["min_distance"] < 2.0:
@@ -239,6 +286,7 @@ def run_full_simulation(plan_data: dict, sample_rate: int = 10) -> dict:
             "max_acceleration": round(max_accel_overall, 2),
             "total_violations": all_speed_violations,
         },
+        "obstacle_check": obs_report,
         "per_drone_speed": speed_reports[:5],  # top 5 only for API
         "warnings": warnings,
         "risk_level": (
